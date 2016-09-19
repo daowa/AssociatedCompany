@@ -146,30 +146,48 @@ public class FileFunction {
 		fw.close();
 		U.print("已输出到：" + address + " ,共" + count + "条记录");
 	}
-//	public static void writeCompanyAndFrequency(TreeMap<String, Integer> map) throws IOException{
-//		FileWriter fw = new FileWriter("E:/work/关联公司/txt/companyAndFrequency.txt");
-//		int count = 0;//记录共有多少个公司
-//		Set<Entry<String, Integer>> set = map.entrySet();
-//		for(Entry<String, Integer> i : set){
-//			count ++;
-//			fw.write(i.getKey() + "\t" + i.getValue());
-//			fw.write("\r\n");
-//		}
-//		fw.close();
-//		U.print("公司名与出现频次已输出到：E:/work/关联公司/txt/companyAndFrequency.txt,"
-//				+ "共" + count + "家公司");
-//	}
 	
-	//仅将公司名输出
-//	public static void writeCompanyName(TreeMap<String, Integer> map) throws IOException{
-//		FileWriter fw = new FileWriter("E:/work/关联公司/txt/companyName.txt");
-//		Set<Entry<String, Integer>> set = map.entrySet();
-//		for(Entry<String, Integer> i : set){
-//			fw.write(i.getKey());
-//			fw.write("\r\n");
-//		}
-//		fw.close();
-//		U.print("公司名已输出到：E:/work/关联公司/txt/companyName.txt");
-//	}
 	
+	//将关联网络输出成pajek可以读取的格式
+	//输出成为.net格式，仅包含点，以及点之间是否有连线
+	//第一个参数是id列表，第二个参数是“id-公司”的map,第三个对象是写入的地址
+	public static void writeNet_Simple(List<Integer> idList, Map<Integer, String> mapIdCompany, String address) throws IOException{
+		FileWriter fw = new FileWriter(address);
+		fw.write("*Vertices " + idList.size());
+		for(int fwi = 0; fwi < idList.size(); fwi++){
+			fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
+			fw.write((fwi+1) + " \"" + mapIdCompany.get(idList.get(fwi)) + "\"");
+		}
+		fw.write("\r\n");
+		fw.write("*Edges");
+		for(int fwi = 0; fwi < idList.size(); fwi++){
+			for(int fwj = 0; fwj < idList.size(); fwj++){
+				fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
+				fw.write((fwi+1) + " " + (fwj+1));
+			}
+		}
+		fw.close();
+	}
+	//第一个参数是id列表，第二个参数是“id-公司”的map,第三个参数是关系矩阵（引用传递），第四个对象是写入的地址
+	public static void writeNet_Weight(List<Integer> idList, Map<Integer, String> mapIdCompany, byte[][] matrix, String address) throws IOException{
+		FileWriter fw = new FileWriter(address);
+		fw.write("*Vertices " + idList.size());
+		for(int fwi = 0; fwi < idList.size(); fwi++){
+			fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
+			fw.write((fwi+1) + " \"" + mapIdCompany.get(idList.get(fwi)) + "\"");
+		}
+		fw.write("\r\n");
+		fw.write("*Edges");
+		for(int fwi = 0; fwi < idList.size(); fwi++){
+			for(int fwj = 0; fwj < idList.size(); fwj++){
+				int weight = matrix[idList.get(fwi)][idList.get(fwj)];
+				for(int weightI = 0; weightI < weight; weightI++){
+					fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
+					fw.write((fwi+1) + " " + (fwj+1));
+				}
+			}
+		}
+		fw.close();
+		U.print("已输出到" + address);
+	}
 }

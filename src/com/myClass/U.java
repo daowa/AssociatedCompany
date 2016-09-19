@@ -1,5 +1,6 @@
 package com.myClass;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -221,6 +222,25 @@ public class U {
 		if(address.contains("广州"))
 			return "广州";
 		return "其它";
+	}
+	
+	
+	//根据阈值，返回网络中高于阈值的idList
+	//这里的判断方式：该公司与n家公司发生关联交易，且n>=threshold，则通过。这里采用的是双向图
+	//第一个参数是网络图矩阵，第二个参数是实际网络的节点数，第三个参数是阈值
+	public static List<Integer> getIdList_ModeHowManyCompany(byte[][] matrix, int nodeCount, int threshold){
+		List<Integer> idList = new ArrayList<>();//存放高于阈值的id
+		for(int idi = 0; idi < nodeCount; idi++){
+			int frequency = 0;
+			for(int idj = 0; idj < nodeCount; idj++){
+				//统计该公司出现的频率（目前仅适用于双向箭头）
+				if(matrix[idi][idj] != 0)
+					frequency += matrix[idi][idj];
+			}
+			if(frequency >= threshold)
+				idList.add(idi);
+		}
+		return idList;
 	}
 
 }

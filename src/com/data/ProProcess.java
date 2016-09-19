@@ -142,7 +142,7 @@ public class ProProcess {
 		Map<String, String> mapCompanyType = new HashMap<String, String>();
 		//记录重复的公司列表
 		Map<String, String> mapRepeat = new HashMap<String, String>();
-		for(int year = 2011; year <= 2014; year++){
+		for(int year = 2011; year < 2015; year++){
 			for(String type : types){
 				U.print("开始读取" + year + type);
 				//读取一份excel，将其中公司两两的关系写入
@@ -206,7 +206,7 @@ public class ProProcess {
 //		String[] types = {"担保类关联交易--国企", "担保类关联交易--民营", "担保类关联交易--总库"};
 //		String[] types = {"购销关联交易--国企", "购销关联交易--民营", "购销关联交易--总库"};
 //		String[] types = {"资金往来关联交易--国企", "资金往来关联交易--民营", "资金往来关联交易--总库"};
-		for(int year = 2011; year <= 2014; year++){
+		for(int year = 2011; year < 2015; year++){
 			Map<String, String> mapCompanyType = new HashMap<String, String>();//记录公司名列表
 			Map<String, String> mapRepeat = new HashMap<String, String>();//记录重复的公司列表
 			for(String type : types){
@@ -287,11 +287,11 @@ public class ProProcess {
 		HSSFCell cellCompanyName = null;
 		HSSFCell cellAssociatedCompany = null;
 		
-		for(int i = 2011; i <= 2014; i++){
+		for(int i = 2011; i < 2012; i++){
 			Map<String, Integer> mapCompanyId = new LinkedHashMap<String, Integer>();//记录每个公司所对应的id
 			Map<Integer, String> mapIdCompany = new HashMap<Integer, String>();//记录每个id所对应的公司
 			int index = 0;//下标从0开始
-			byte[][] matrix = new byte[32767][32767];//UCINET最多支持那么多，超过那么多需要换个方法
+			byte[][] matrix = new byte[40000][40000];//UCINET最多支持那么多，超过那么多需要换个方法
 			
 			//读取一份excel，将其中公司两两的关系写入
 			String fileName = "E:/work/关联公司/原始数据/" + i + ".xls";
@@ -339,88 +339,12 @@ public class ProProcess {
 			U.print("文件读取结束，开始写入txt");
 			
 			//读取matrix，只选取高于阈值的公司id（目前仅适用于双向箭头）
-			List<Integer> idList = new ArrayList<>();//存放高于阈值的id
-			for(int idi = 0; idi < mapCompanyId.size(); idi++){
-				int frequency = 0;
-				for(int idj = 0; idj < mapCompanyId.size(); idj++){
-					//统计该公司出现的频率（目前仅适用于双向箭头）
-					if(matrix[idi][idj] != 0)
-						frequency += matrix[idi][idj];
-				}
-				if(frequency >= threshold)
-					idList.add(idi);
-			}
+			List<Integer> idList = U.getIdList_ModeHowManyCompany(matrix, mapCompanyId.size(), threshold);
 			
 			//将关联公司写入txt(不敢放在别处了，再复制一个matrix内存就满了)
-			if(outputFormat == M.OUTPUTFORMAT_DL){
-				FileWriter fw = new FileWriter("E:/work/关联公司/txt/dl_asCompany"
-							+ i + "_" + isOneWay + "_" + threshold + "_" + mode + ".txt");
-				fw.write("dl" + "\r\n");
-				fw.write("n = " + idList.size() + "\r\n");
-				fw.write("labels embedded" + "\r\n");
-				fw.write("format = fullmatrix" + "\r\n");
-				fw.write("data:" + "\r\n");
-				String line = null;
-				//写第一行（字段行）
-				line = "";//清空line
-				for(String key : mapCompanyId.keySet()){
-					if(idList.contains(mapCompanyId.get(key)))//仅高于阈值的加入打印出来
-						line += key + " ";
-				}
-				line = line.substring(0, line.length()-1);//删除最后一个空格
-				fw.write(line + "\r\n");
-				//逐行写记录
-				for(String key : mapCompanyId.keySet()){
-					if(idList.contains(mapCompanyId.get(key))){//仅高于阈值的加入打印出来
-						U.print("正在写入公司:" + key + ",id为:" + mapCompanyId.get(key));
-						line = "";//清空line
-						line += key + " ";
-						for(int fwi = 0; fwi < mapCompanyId.size(); fwi ++){
-							if(idList.contains(fwi)){//仅高于阈值的列加入打印出来
-								line += matrix[mapCompanyId.get(key)][fwi] + " ";
-							}
-						}
-						line = line.substring(0, line.length()-1);//删除最后一个空格
-						fw.write(line + "\r\n");
-					}
-				}
-				fw.close();
-			}
-			else if(outputFormat == M.OUTPUTFORMAT_NET){
-				FileWriter fw = new FileWriter("E:/work/关联公司/txt/net_asCompany"
-						+ i + "_" + isOneWay + "_" + threshold + "_" + mode + ".txt");
-				fw.write("From\tTo\tWeight\r\n");
-				for(int fwi = 0; fwi < idList.size(); fwi++){
-					U.print("正在写入公司:" + mapIdCompany.get(idList.get(fwi)) + ",id为:" + idList.get(fwi));
-					for(int fwj = 0; fwj < idList.size(); fwj++){
-						if(matrix[idList.get(fwi)][idList.get(fwj)] == 0) continue;//如果无关联，则跳过
-						fw.write(idList.get(fwi) + "\t"
-								+ idList.get(fwj) + "\t"
-								+ matrix[idList.get(fwi)][idList.get(fwj)]/2 + "\r\n");
-					}
-				}
-				fw.close();
-			}
-			else if(outputFormat == M.OUTPUTFORMAT_NETTXT){
-				FileWriter fw = new FileWriter("E:/work/关联公司/txt/nettxt_asCompany"
-						+ i + "_" + isOneWay + "_" + threshold + "_" + mode + ".net");
-				fw.write("*Vertices " + idList.size());
-				for(int fwi = 0; fwi < idList.size(); fwi++){
-					fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-					fw.write((fwi+1) + " \"" + mapIdCompany.get(idList.get(fwi)) + "\"");
-				}
-				fw.write("\r\n");
-				fw.write("*Edges");
-				for(int fwi = 0; fwi < idList.size(); fwi++){
-					for(int fwj = 0; fwj < idList.size(); fwj++){
-						int weight = matrix[idList.get(fwi)][idList.get(fwj)];
-						for(int weightI = 0; weightI < weight; weightI++){
-							fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-							fw.write((fwi+1) + " " + (fwj+1));
-						}
-					}
-				}
-				fw.close();
+			if(outputFormat == M.OUTPUTFORMAT_NETWeight){
+				String address = "E:/work/关联公司/txt/nettxt_asCompany" + i + "_" + isOneWay + "_" + threshold + "_" + mode + ".net";
+				FileFunction.writeNet_Weight(idList, mapIdCompany, matrix, address);
 			}
 			else if(outputFormat == M.OUTPUTFORMAT_COMPANYTYPE){
 				Map<String, Integer> map = FileFunction.readMap_SI("E:\\work\\关联公司\\txt\\companyType.txt");
@@ -558,20 +482,7 @@ public class ProProcess {
 					}
 					
 					//读取matrix，只选取高于阈值的公司id
-					List<Integer> idList = new ArrayList<>();//存放高于阈值的id
-					for(int idi = 0; idi < mapCompanyId.size(); idi++){
-						int frequency = 0;
-						for(int idj = 0; idj < mapCompanyId.size(); idj++){
-							//统计该公司出现的频率
-							if(matrix[idi][idj] != 0)
-								frequency += matrix[idi][idj];
-							//单向箭头阈值计算要看行和列
-							if(direction == 1 && matrix[idj][idi] != 0)
-								frequency += matrix[idj][idi];
-						}
-						if(frequency >= threshold)
-							idList.add(idi);
-					}
+					List<Integer> idList = U.getIdList_ModeHowManyCompany(matrix, mapCompanyId.size(), threshold);
 					
 					//输出.net文件
 					String temp = "";
@@ -579,26 +490,9 @@ public class ProProcess {
 						temp = "E:\\work\\关联公司\\txt\\单向图_无阈值\\" + year + "\\" + fileName + "\\" + excelName;
 					else 
 						temp = "E:\\work\\关联公司\\txt\\双向图_无阈值\\" + year + "\\" + fileName + "\\" + excelName;
-					if(outputFormat == M.OUTPUTFORMAT_NETTXT){//输出网络
-						FileWriter fw = new FileWriter(temp.substring(0, temp.length()-4) + "net");
-						fw.write("*Vertices " + idList.size());
-						for(int fwi = 0; fwi < idList.size(); fwi++){
-							fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-							fw.write((fwi+1) + " \"" + mapIdCompany.get(idList.get(fwi)) + "\"");
-						}
-						fw.write("\r\n");
-						fw.write("*Edges");
-						for(int fwi = 0; fwi < idList.size(); fwi++){
-							for(int fwj = 0; fwj < idList.size(); fwj++){
-								int weight = matrix[idList.get(fwi)][idList.get(fwj)];
-								for(int weightI = 0; weightI < weight; weightI++){
-									fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-									fw.write((fwi+1) + " " + (fwj+1));
-								}
-							}
-						}
-						fw.close();
-						U.print("已输出到" + temp.substring(0, temp.length()-4) + "net");
+					if(outputFormat == M.OUTPUTFORMAT_NETWeight){//输出网络
+						String address = temp.substring(0, temp.length()-4) + "net";
+						FileFunction.writeNet_Weight(idList, mapIdCompany, matrix, address);
 					}
 					else if(outputFormat == M.OUTPUTFORMAT_COMPANYTYPE){//输出A股颜色
 					Map<String, Integer> map = FileFunction.readMap_SI("E:\\work\\关联公司\\txt\\companyType.txt");
@@ -679,20 +573,7 @@ public class ProProcess {
 					}
 					
 					//读取matrix，只选取高于阈值的公司id
-					List<Integer> idList = new ArrayList<>();//存放高于阈值的id
-					for(int idi = 0; idi < mapCompanyId.size(); idi++){
-						int frequency = 0;
-						for(int idj = 0; idj < mapCompanyId.size(); idj++){
-							//统计该公司出现的频率
-							if(matrix[idi][idj] != 0)
-								frequency += matrix[idi][idj];
-							//单向箭头阈值计算要看行和列
-							if(direction == 1 && matrix[idj][idi] != 0)
-								frequency += matrix[idj][idi];
-						}
-						if(frequency >= threshold)
-							idList.add(idi);
-					}
+					List<Integer> idList = U.getIdList_ModeHowManyCompany(matrix, mapCompanyId.size(), threshold);
 					
 					//输出.net文件
 					String temp = "";
@@ -700,26 +581,9 @@ public class ProProcess {
 						temp = "E:\\work\\关联公司\\txt\\系族\\单向图\\" + excelName;
 					else 
 						temp = "E:\\work\\关联公司\\txt\\系族\\双向图\\" + excelName;
-					if(outputFormat == M.OUTPUTFORMAT_NETTXT){//输出网络
-						FileWriter fw = new FileWriter(temp.substring(0, temp.length()-4) + "net");
-						fw.write("*Vertices " + idList.size());
-						for(int fwi = 0; fwi < idList.size(); fwi++){
-							fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-							fw.write((fwi+1) + " \"" + mapIdCompany.get(idList.get(fwi)) + "\"");
-						}
-						fw.write("\r\n");
-						fw.write("*Edges");
-						for(int fwi = 0; fwi < idList.size(); fwi++){
-							for(int fwj = 0; fwj < idList.size(); fwj++){
-								int weight = matrix[idList.get(fwi)][idList.get(fwj)];
-								for(int weightI = 0; weightI < weight; weightI++){
-									fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-									fw.write((fwi+1) + " " + (fwj+1));
-								}
-							}
-						}
-						fw.close();
-						U.print("已输出到" + temp.substring(0, temp.length()-4) + "net");
+					if(outputFormat == M.OUTPUTFORMAT_NETWeight){//输出网络
+						String address = temp.substring(0, temp.length()-4) + "net";
+						FileFunction.writeNet_Weight(idList, mapIdCompany, matrix, address);
 					}
 					else if(outputFormat == M.OUTPUTFORMAT_COMPANYTYPE){//输出A股颜色
 						Map<String, Integer> map = FileFunction.readMap_SI("E:\\work\\关联公司\\txt\\companyType.txt");

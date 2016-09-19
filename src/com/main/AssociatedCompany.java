@@ -20,7 +20,7 @@ public class AssociatedCompany{
 		
 		//输出公司关系表
 		//第一个参数表示输出格式，第二个参数表示所有公司还是只有A股上市公司，第三个参数表示是否是单向箭头，第四个参数表示公司出现的阈值
-//		ProProcess.outputCompanyAssociate(M.OUTPUTFORMAT_STARCOMPANY, M.MODE_ALLCOMPANY, false, 1);
+		ProProcess.outputCompanyAssociate(M.OUTPUTFORMAT_NETWeight, M.MODE_ALLCOMPANY, false, 1);
 		//输出按类型分的公司关系表，第一个参数为阈值，第二个参数为单向还是双向箭头,第三个参数表示输出类型
 //		ProProcess.outputByClassification(1, 2, M.OUTPUTFORMAT_COMPANYTYPE);
 		//输出按系族分的公司关系表，第一个参数为阈值，第二个参数为单向还是双向箭头,第三个参数表示输出类型
