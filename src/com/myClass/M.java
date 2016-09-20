@@ -27,6 +27,11 @@ public class M {
 	public static int COMPANYTYPE_B = 101;//这里指的是上市的非A股公司
 	public static int COMPANYTYPE_NOIPO = 102;//非上市公司
 	
+	//.net格式下每个节点所对应的颜色 的规则
+	public static int COLOR_ADDRESS = 200;
+	public static int COLOR_COMPANYTYPE = 201;
+	public static int COLOR_STARCOMPANY = 202;
+	
 	//不同分类类型
 	public static String Classify_EquityOwnership = "性质";
 	public static String Classify_Industry = "行业";

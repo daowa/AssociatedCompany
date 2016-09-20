@@ -291,7 +291,7 @@ public class ProProcess {
 			Map<String, Integer> mapCompanyId = new LinkedHashMap<String, Integer>();//记录每个公司所对应的id
 			Map<Integer, String> mapIdCompany = new HashMap<Integer, String>();//记录每个id所对应的公司
 			int index = 0;//下标从0开始
-			byte[][] matrix = new byte[40000][40000];//UCINET最多支持那么多，超过那么多需要换个方法
+			byte[][] matrix = new byte[40000][40000];
 			
 			//读取一份excel，将其中公司两两的关系写入
 			String fileName = "E:/work/关联公司/原始数据/" + i + ".xls";
@@ -348,82 +348,20 @@ public class ProProcess {
 			}
 			else if(outputFormat == M.OUTPUTFORMAT_COMPANYTYPE){
 				Map<String, Integer> map = FileFunction.readMap_SI("E:\\work\\关联公司\\txt\\companyType.txt");
-				FileWriter fw = new FileWriter("E:/work/关联公司/txt/cpType_asCompany"
-						+ i + "_" + isOneWay + "_" + threshold + "_" + mode + ".net");
-				fw.write("*Vertices " + idList.size());
-				for(int fwi = 0; fwi < idList.size(); fwi++){
-					fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-					String cpName = mapIdCompany.get(idList.get(fwi));
-					fw.write((fwi+1) + " \"" + cpName + "\""
-							+ " ic " + U.getCompanyTypeColor(map.get(cpName)!=null ? map.get(cpName) : M.COMPANYTYPE_NOIPO));
-					U.print("写入公司:" + mapIdCompany.get(idList.get(fwi)));
-				}
-				fw.write("\r\n");
-				fw.write("*Edges");
-				for(int fwi = 0; fwi < idList.size(); fwi++){
-					for(int fwj = 0; fwj < idList.size(); fwj++){
-						int weight = matrix[idList.get(fwi)][idList.get(fwj)];
-						for(int weightI = 0; weightI < weight; weightI++){
-							fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-							fw.write((fwi+1) + " " + (fwj+1));
-							U.print((fwi+1) + " " + (fwj+1));
-						}
-					}
-				}
-				fw.close();
+				String address = "E:/work/关联公司/txt/cpType_asCompany" + i + "_" + isOneWay + "_" + threshold + "_" + mode + ".net";
+				FileFunction.writeNet_Color(idList, mapIdCompany, matrix, address, M.COLOR_COMPANYTYPE, map);
 			}
 			else if(outputFormat == M.OUTPUTFORMAT_ADDRESS){
 				Map<String, String> map = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyAddress.txt");
-				FileWriter fw = new FileWriter("E:/work/关联公司/txt/cpAddress_asCompany"
-						+ i + "_" + isOneWay + "_" + threshold + "_" + mode + ".net");
-				fw.write("*Vertices " + idList.size());
-				for(int fwi = 0; fwi < idList.size(); fwi++){
-					String cpName = mapIdCompany.get(idList.get(fwi));
-					fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-					fw.write((fwi+1) + " \"" + cpName + "\""
-							+ " ic " + U.getAddressColor(map.get(cpName)));
-					U.print("写入公司:" + mapIdCompany.get(idList.get(fwi)));
-				}
-				fw.write("\r\n");
-				fw.write("*Edges");
-				for(int fwi = 0; fwi < idList.size(); fwi++){
-					for(int fwj = 0; fwj < idList.size(); fwj++){
-						int weight = matrix[idList.get(fwi)][idList.get(fwj)];
-						for(int weightI = 0; weightI < weight; weightI++){
-							fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-							fw.write((fwi+1) + " " + (fwj+1));
-							U.print((fwi+1) + " " + (fwj+1));
-						}
-					}
-				}
-				fw.close();
+				String address = "E:/work/关联公司/txt/cpAddress_asCompany" + i + "_" + isOneWay + "_" + threshold + "_" + mode + ".net";
+				FileFunction.writeNet_Color(idList, mapIdCompany, matrix, address, M.COLOR_ADDRESS, map);
 			}
 			else if(outputFormat == M.OUTPUTFORMAT_STARCOMPANY){
 				String star = "中外运空运发展股份有限公司";
-				FileWriter fw = new FileWriter("E:/work/关联公司/txt/StarCompany" + star + i + ".net");
-				fw.write("*Vertices " + idList.size());
-				for(int fwi = 0; fwi < idList.size(); fwi++){
-					fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-					String cpName = mapIdCompany.get(idList.get(fwi));
-					if(cpName.equals(star))
-						fw.write((fwi+1) + " \"" + cpName + "\"" + " ic " + "Red");
-					else
-						fw.write((fwi+1) + " \"" + cpName + "\"" + " ic " + "Gray");
-					U.print("写入公司:" + mapIdCompany.get(idList.get(fwi)));
-				}
-				fw.write("\r\n");
-				fw.write("*Edges");
-				for(int fwi = 0; fwi < idList.size(); fwi++){
-					for(int fwj = 0; fwj < idList.size(); fwj++){
-						int weight = matrix[idList.get(fwi)][idList.get(fwj)];
-						for(int weightI = 0; weightI < weight; weightI++){
-							fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-							fw.write((fwi+1) + " " + (fwj+1));
-							U.print((fwi+1) + " " + (fwj+1));
-						}
-					}
-				}
-				fw.close();
+				String address = "E:/work/关联公司/txt/StarCompany" + star + i + ".net";
+				Map<String, String> map = new HashMap<>();
+				map.put("star", star);
+				FileFunction.writeNet_Color(idList, mapIdCompany, matrix, address, M.COLOR_STARCOMPANY, map);
 			}
 			U.print(i + "年写入完毕");
 		}
@@ -495,28 +433,9 @@ public class ProProcess {
 						FileFunction.writeNet_Weight(idList, mapIdCompany, matrix, address);
 					}
 					else if(outputFormat == M.OUTPUTFORMAT_COMPANYTYPE){//输出A股颜色
-					Map<String, Integer> map = FileFunction.readMap_SI("E:\\work\\关联公司\\txt\\companyType.txt");
-					FileWriter fw = new FileWriter(temp.substring(0, temp.length()-5) + "colorA.net");
-					fw.write("*Vertices " + idList.size());
-					for(int fwi = 0; fwi < idList.size(); fwi++){
-						fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-						String cpName = mapIdCompany.get(idList.get(fwi));
-						fw.write((fwi+1) + " \"" + cpName + "\""
-								+ " ic " + U.getCompanyTypeColor(map.get(cpName)!=null ? map.get(cpName) : M.COMPANYTYPE_NOIPO));
-					}
-					fw.write("\r\n");
-					fw.write("*Edges");
-					for(int fwi = 0; fwi < idList.size(); fwi++){
-						for(int fwj = 0; fwj < idList.size(); fwj++){
-							int weight = matrix[idList.get(fwi)][idList.get(fwj)];
-							for(int weightI = 0; weightI < weight; weightI++){
-								fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-								fw.write((fwi+1) + " " + (fwj+1));
-							}
-						}
-					}
-					fw.close();
-					U.print("已输出到" + temp.substring(0, temp.length()-5) + "colorA.net");
+						Map<String, Integer> map = FileFunction.readMap_SI("E:\\work\\关联公司\\txt\\companyType.txt");
+						String address = temp.substring(0, temp.length()-5) + "colorA.net";
+						FileFunction.writeNet_Color(idList, mapIdCompany, matrix, address, M.COLOR_COMPANYTYPE, map);
 					}
 				}
 			}
@@ -587,27 +506,8 @@ public class ProProcess {
 					}
 					else if(outputFormat == M.OUTPUTFORMAT_COMPANYTYPE){//输出A股颜色
 						Map<String, Integer> map = FileFunction.readMap_SI("E:\\work\\关联公司\\txt\\companyType.txt");
-					FileWriter fw = new FileWriter(temp.substring(0, temp.length()-5) + "colorA.net");
-					fw.write("*Vertices " + idList.size());
-					for(int fwi = 0; fwi < idList.size(); fwi++){
-						fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-						String cpName = mapIdCompany.get(idList.get(fwi));
-						fw.write((fwi+1) + " \"" + cpName + "\""
-								+ " ic " + U.getCompanyTypeColor(map.get(cpName)!=null ? map.get(cpName) : M.COMPANYTYPE_NOIPO));
-					}
-					fw.write("\r\n");
-					fw.write("*Edges");
-					for(int fwi = 0; fwi < idList.size(); fwi++){
-						for(int fwj = 0; fwj < idList.size(); fwj++){
-							int weight = matrix[idList.get(fwi)][idList.get(fwj)];
-							for(int weightI = 0; weightI < weight; weightI++){
-								fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-								fw.write((fwi+1) + " " + (fwj+1));
-							}
-						}
-					}
-					fw.close();
-					U.print("已输出到" + temp.substring(0, temp.length()-5) + "colorA.net");
+						String address = temp.substring(0, temp.length()-5) + "colorA.net";
+						FileFunction.writeNet_Color(idList, mapIdCompany, matrix, address, M.COLOR_COMPANYTYPE, map);
 					}
 				}
 			}
@@ -619,7 +519,7 @@ public class ProProcess {
 		HSSFCell cellCompanyName = null;
 		HSSFCell cellAssociatedCompany = null;
 		
-		for(int i = 2011; i <= 2014; i++){
+		for(int i = 2011; i < 2015; i++){
 			Map<String, Integer> mapCompanyId = new LinkedHashMap<String, Integer>();//记录每个公司所对应的id
 			Map<Integer, String> mapIdCompany = new HashMap<Integer, String>();//记录每个id所对应的公司
 			int index = 0;//下标从0开始
@@ -678,29 +578,11 @@ public class ProProcess {
 			U.print("文件读取结束，开始写入txt");
 			
 			//读取matrix
-			List<Integer> idList = new ArrayList<>();
-			for(int idi = 0; idi < mapCompanyId.size(); idi++){
-				idList.add(idi);
-			}
+			List<Integer> idList = U.getIdList_ModeHowManyCompany(matrix, mapCompanyId.size(), 0);
+			
 			//写入.net
-			FileWriter fw = new FileWriter("E:/work/关联公司/txt/TransactionType_" + type + "_" + i + ".net");
-			fw.write("*Vertices " + idList.size());
-			for(int fwi = 0; fwi < idList.size(); fwi++){
-				fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-				fw.write((fwi+1) + " \"" + mapIdCompany.get(idList.get(fwi)) + "\"");
-			}
-			fw.write("\r\n");
-			fw.write("*Edges");
-			for(int fwi = 0; fwi < idList.size(); fwi++){
-				for(int fwj = 0; fwj < idList.size(); fwj++){
-					int weight = matrix[idList.get(fwi)][idList.get(fwj)];
-					for(int weightI = 0; weightI < weight; weightI++){
-						fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-						fw.write((fwi+1) + " " + (fwj+1));
-					}
-				}
-			}
-			fw.close();
+			String address = "E:/work/关联公司/txt/TransactionType_" + type + "_" + i + ".net";
+			FileFunction.writeNet_Weight(idList, mapIdCompany, matrix, address);
 		}
 		U.print("done");
 	}

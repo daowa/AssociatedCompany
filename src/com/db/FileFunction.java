@@ -22,6 +22,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import com.myClass.M;
 import com.myClass.U;
 
 public class FileFunction {
@@ -189,5 +190,38 @@ public class FileFunction {
 		}
 		fw.close();
 		U.print("已输出到" + address);
+	}
+	//第一个参数是id列表，第二个参数是“id-公司”的map,第三个参数是关系矩阵（引用传递），第四个对象是写入的地址，第五个参数是确定颜色的规则, 第六个参数是“公司-属性”的map（用于确定颜色 ，可不填）
+	public static void writeNet_Color(List<Integer> idList, Map<Integer, String> mapIdCompany, byte[][] matrix, String address, int colorRule, Map map) throws IOException{
+		FileWriter fw = new FileWriter(address);
+		fw.write("*Vertices " + idList.size());
+		for(int fwi = 0; fwi < idList.size(); fwi++){
+			String cpName = mapIdCompany.get(idList.get(fwi));
+			fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
+			String color = "";
+			if(colorRule == M.COLOR_ADDRESS)
+				color = U.getAddressColor(map.get(cpName).toString());
+			else if(colorRule == M.COLOR_COMPANYTYPE)
+				color = U.getCompanyTypeColor(map.get(cpName)!=null ? Integer.parseInt(map.get(cpName).toString()) : M.COMPANYTYPE_NOIPO);
+			else if(colorRule == M.COLOR_STARCOMPANY){
+				if(cpName.equals(map.get("star")))
+					color = "Red";
+				else
+					color = "Gray";
+			}
+			fw.write((fwi+1) + " \"" + cpName + "\"" + " ic " + color);
+		}
+		fw.write("\r\n");
+		fw.write("*Edges");
+		for(int fwi = 0; fwi < idList.size(); fwi++){
+			for(int fwj = 0; fwj < idList.size(); fwj++){
+				int weight = matrix[idList.get(fwi)][idList.get(fwj)];
+				for(int weightI = 0; weightI < weight; weightI++){
+					fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
+					fw.write((fwi+1) + " " + (fwj+1));
+				}
+			}
+		}
+		fw.close();
 	}
 }
