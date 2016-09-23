@@ -34,39 +34,32 @@ public class ProProcess {
 
 	//统计4个excel中出现的公司（或人名），输出到txt
 	public static void outputCompanyName() throws IOException{
-		Map<String, Integer> mapCompany = new HashMap<String, Integer>();
-		HSSFCell cellCompanyName = null;
-		HSSFCell cellAssociatedCompany = null;
-		
+		//从excel中获取数据
+		List<List<String>> lists = new ArrayList<List<String>>();
 		for(int i = 2011; i < 2015; i++){
 			String fileName = "E:/work/关联公司/原始数据/" + i + ".xls";
-			int sheetNumber = ExcelFunction.getSheetNumber(fileName);
-			for(int j = 0; j < sheetNumber; j++){
-				HSSFSheet sheet = ExcelFunction.getSheet(fileName, j);
-				int rowCount = sheet.getLastRowNum();
-				for(int k = 1 ; k < rowCount ; k++){
-					//记录该公司出现几次
-					int count = 0;
-					//添加主体公司名
-					cellCompanyName = sheet.getRow(k).getCell(M.EXCELINDEX_CompanyName);
-					String name = U.getCellStringValue(cellCompanyName).trim().replaceAll(" ", "");
-					count = mapCompany.get(name) == null ? 1 : mapCompany.get(name)+1;
-					mapCompany.put(name, count);
-					//添加关联公司名
-					cellAssociatedCompany = sheet.getRow(k).getCell(M.EXCELINDEX_AssociatedCompany);
-					String asName = U.getCellStringValue(cellAssociatedCompany).trim().replaceAll(" ", "");
-					asName = asName.replaceAll(",", "、");//2014的excel中切割标示用的是','
-					String[] names = asName.split("、");
-					for(String n : names){
-						count = mapCompany.get(n) == null ? 1 : mapCompany.get(n)+1;
-						mapCompany.put(n, count);
-					}
-				}
+			lists.addAll(U.getRowsList(fileName, M.EXCELINDEX_CompanyName, M.EXCELINDEX_AssociatedCompany));
+		}
+		
+		//将获取到的数据进一步处理
+		Map<String, Integer> map = new HashMap<String, Integer>();
+		for(int i = 0; i < lists.size(); i++){
+			String company = lists.get(i).get(0);
+			String associateCompanys = lists.get(i).get(1);
+			//统计主体公司频数
+			int countCompanys = map.get(company) == null ? 1 : map.get(company)+1;
+			map.put(company, countCompanys);
+			//统计关联公司频数
+			associateCompanys = associateCompanys.replaceAll(",", "、");//2014的excel中切割标示用的是','
+			String[] names = associateCompanys.split("、");
+			for(String n : names){
+				int countAssociateCompnay = map.get(n) == null ? 1 : map.get(n)+1;
+				map.put(n, countAssociateCompnay);
 			}
 		}
 		
 		//将map按照value从大到小排序
-        TreeMap<String, Integer> sorted_map = U.sortMap(mapCompany);
+        TreeMap<String, Integer> sorted_map = U.sortMap(map);
         
         FileFunction.writeMap_KV(sorted_map, "E:/work/关联公司/txt/companyAndFrequency.txt");//将公司名和出现频次输出
         FileFunction.writeMap_K(sorted_map, "E:/work/关联公司/txt/companyName.txt");//仅输出公司名
@@ -74,28 +67,20 @@ public class ProProcess {
 	
 	//统计4个excel中出现的公司（或人名）的类型，输出到txt并返回各个公司的类型
 	public static Map<String, Integer> outputCompanyType() throws IOException{
-		Map<String, Integer> map = new HashMap<String, Integer>();
-		HSSFCell cellCompanyName = null;
-		
+		//从excel中获取数据
+		List<List<String>> lists = new ArrayList<List<String>>();
 		for(int i = 2011; i < 2015; i++){
 			String fileName = "E:/work/关联公司/原始数据/" + i + ".xls";
-			int sheetNumber = ExcelFunction.getSheetNumber(fileName);
-			for(int j = 0; j < sheetNumber; j++){
-				HSSFSheet sheet = ExcelFunction.getSheet(fileName, j);
-				int rowCount = sheet.getLastRowNum();
-				for(int k = 1 ; k < rowCount ; k++){
-					//仅统计主体公司，没有出现在主体公司中的关联公司都是非上市公司
-					cellCompanyName = sheet.getRow(k).getCell(M.EXCELINDEX_CompanyName);
-					String name = U.getCellStringValue(cellCompanyName).trim().replaceAll(" ", "");
-					//获取股票号码
-					HSSFCell tempCell = sheet.getRow(k).getCell(M.EXCELINDEX_StockSymbol);
-					String stockSymbol = U.getCellStringValue(tempCell).trim().replaceAll(" ", "");
-					if(U.isA(stockSymbol))
-						map.put(name, M.COMPANYTYPE_A);
-					else
-						map.put(name, M.COMPANYTYPE_B);
-				}
-			}
+			lists.addAll(U.getRowsList(fileName, M.EXCELINDEX_CompanyName, M.EXCELINDEX_StockSymbol));
+		}
+		
+		//将获取到的数据进一步处理
+		Map<String, Integer> map = new HashMap<String, Integer>();
+		for(int i = 0; i < lists.size(); i++){
+			if(U.isA(lists.get(i).get(1)))
+				map.put(lists.get(i).get(0), M.COMPANYTYPE_A);
+			else
+				map.put(lists.get(i).get(0), M.COMPANYTYPE_B);
 		}
 
 		FileFunction.writeMap_KV(map, "E:\\work\\关联公司\\txt\\companyType.txt");//输出公司类型
@@ -104,27 +89,20 @@ public class ProProcess {
 	
 	//将各公司地址输出到txt
 	public static Map<String, String> outputCompanyAddress() throws IOException{
-		Map<String, String> map = new HashMap<String, String>();
-		HSSFCell cellCompanyName = null;
-		
+		//从excel中获取数据
+		List<List<String>> lists = new ArrayList<List<String>>();
 		for(int i = 2011; i < 2015; i++){
 			String fileName = "E:/work/关联公司/原始数据/" + i + ".xls";
-			int sheetNumber = ExcelFunction.getSheetNumber(fileName);
-			for(int j = 0; j < sheetNumber; j++){
-				HSSFSheet sheet = ExcelFunction.getSheet(fileName, j);
-				int rowCount = sheet.getLastRowNum();
-				for(int k = 1 ; k < rowCount ; k++){
-					//仅统计主体公司，因为仅主体公司有地址信息
-					cellCompanyName = sheet.getRow(k).getCell(M.EXCELINDEX_CompanyName);
-					String name = U.getCellStringValue(cellCompanyName).trim().replaceAll(" ", "");
-					//获取地址
-					HSSFCell tempCell = sheet.getRow(k).getCell(M.EXCELINDEX_Address);
-					String address = U.getCellStringValue(tempCell).trim().replaceAll(" ", "");
-					map.put(name, U.getCompanyAddress(address));
-				}
-			}
+			lists.addAll(U.getRowsList(fileName, M.EXCELINDEX_CompanyName, M.EXCELINDEX_Address));
 		}
 		
+		//将获取到的数据进一步处理
+		Map<String, String> map = new HashMap<String, String>();
+		for(int i = 0; i < lists.size(); i++){
+			map.put(lists.get(i).get(0), U.getCompanyAddress(lists.get(i).get(1)));
+		}
+		
+		//输出
 		FileFunction.writeMap_KV(map, "E:\\work\\关联公司\\txt\\companyAddress.txt");//将 公司名-地址 输出到txt中
 		return map;
 	}
@@ -262,25 +240,6 @@ public class ProProcess {
 		}
 	}
 	
-	//从net中读取公司名列表
-	private static List<String> readCompanyName(String path) throws NumberFormatException, IOException{
-		List<String> list = new ArrayList<String>();
-		File file = new File(path);
-		InputStreamReader stream = new InputStreamReader(new FileInputStream(file));
-		BufferedReader reader = new BufferedReader(stream);
-		//读取共有多少个公司
-		String line = reader.readLine();
-		int count = Integer.parseInt(line.substring(10, line.length()));
-		U.print(count);
-		for(int i = 0; i < count; i++){
-			line = reader.readLine();
-			Pattern p = Pattern.compile("\".*\"");
-			Matcher m=p.matcher(line);
-			if(m.find())
-				list.add(m.group(0).substring(1, m.group(0).length()-1));
-		}
-		return list;
-	}
 	
 	//将关联公司写入txt
 	public static void outputCompanyAssociate(int outputFormat,  int mode, boolean isOneWay, int threshold) throws IOException{
@@ -369,8 +328,8 @@ public class ProProcess {
 	}
 	
 	//将按类型分的关联公司写入txt
-	public static void outputByClassification(int threshold,int direction, int outputFormat) throws IOException{
-		for(int year = 2011; year <= 2014; year++){
+	public static void outputByClassification(int outputFormat, int threshold) throws IOException{
+		for(int year = 2011; year < 2012; year++){
 			File file0 = new File("E:\\work\\关联公司\\原始数据\\关联交易数据库--分类处理\\" + year);
 			String[] fileList0 = file0.list();
 			for(String fileName : fileList0){
@@ -379,55 +338,17 @@ public class ProProcess {
 				for(String excelName :fileList1){//终于读取到excel文件啦..
 					//数据存储准备
 					U.print("开始读取" + excelName);
-					Map<String, Integer> mapCompanyId = new LinkedHashMap<String, Integer>();//记录每个公司所对应的id
 					Map<Integer, String> mapIdCompany = new HashMap<Integer, String>();//记录每个id所对应的公司
-					int id = 0;//下标从0开始
+					Map<String, Integer> mapCompanyId = new LinkedHashMap<String, Integer>();//记录每个公司所对应的id
 					byte[][] matrix = new byte[25265][25265];//最大25265个公司（2014年），开这么大的矩阵空间足够了
-					
-					//读取一份excel，将其中公司两两的关系写入
-					XSSFSheet sheet = ExcelFunction.getSheet_XSSF("E:\\work\\关联公司\\原始数据\\关联交易数据库--分类处理\\" + year + "\\" + fileName + "\\" + excelName, 0);
-					int rowCount = sheet.getLastRowNum();
-					for(int k = 1 ; k < rowCount ; k++){
-						//访问公司名
-						XSSFCell cellCompanyName = sheet.getRow(k).getCell(M.EXCELINDEX_CompanyName);
-						//有些excel后面有空行
-						if(cellCompanyName == null) break;
-						String name = U.getCellStringValue(cellCompanyName).trim().replace(" ", "").replaceAll(" ", "");
-						if(U.needContinue(name)) continue;//去掉两个空的公司名(中英文空格)
-						if(mapCompanyId.get(name) == null){//如果该公司并不在map中，则为其添加一个id
-							mapCompanyId.put(name, id);
-							mapIdCompany.put(id, name);//同时为该id对应到company
-							id++;
-						}
-						//访问关联公司
-						XSSFCell cellAssociatedCompany = sheet.getRow(k).getCell(M.EXCELINDEX_AssociatedCompany);
-						String asName = U.getCellStringValue(cellAssociatedCompany).trim().replaceAll(" ", "");
-						
-						asName = asName.replaceAll(",", "、");//2014的excel中切割标示用的是','
-						String[] names = asName.split("、");
-						for(String n : names){
-							if(U.needContinue(n)) continue;//去掉两个空的公司名(中英文空格)
-							if(mapCompanyId.get(n) == null){//如果该公司并不在map中，则为其添加一个下标
-								mapCompanyId.put(n, id);
-								mapIdCompany.put(id, n);//同时为该id对应到company
-								id++;
-							}
-							//绘制单向，由主体公司指向关联公司
-							matrix[mapCompanyId.get(name)][mapCompanyId.get(n)] = 1;//这里没有给线赋权
-							if(direction == 2)//双向箭头有两个矩阵格都需要+1
-								matrix[mapCompanyId.get(n)][mapCompanyId.get(name)] = 1;
-						}
-					}
+					String excelAddress = "E:\\work\\关联公司\\原始数据\\关联交易数据库--分类处理\\" + year + "\\" + fileName + "\\" + excelName;
+					U.getMatrix(matrix, mapIdCompany, mapCompanyId, excelAddress);//获取网络矩阵
 					
 					//读取matrix，只选取高于阈值的公司id
 					List<Integer> idList = U.getIdList_ModeHowManyCompany(matrix, mapCompanyId.size(), threshold);
 					
 					//输出.net文件
-					String temp = "";
-					if(direction == 1)
-						temp = "E:\\work\\关联公司\\txt\\单向图_无阈值\\" + year + "\\" + fileName + "\\" + excelName;
-					else 
-						temp = "E:\\work\\关联公司\\txt\\双向图_无阈值\\" + year + "\\" + fileName + "\\" + excelName;
+					String temp = "E:\\work\\关联公司\\txt\\双向图_无阈值\\" + year + "\\" + fileName + "\\" + excelName;
 					if(outputFormat == M.OUTPUTFORMAT_NETWeight){//输出网络
 						String address = temp.substring(0, temp.length()-4) + "net";
 						FileFunction.writeNet_Weight(idList, mapIdCompany, matrix, address);
@@ -444,71 +365,31 @@ public class ProProcess {
 	}
 	
 	//输出按系族分的公司关系表
-	public static void outputByStrain(int threshold,int direction, int outputFormat) throws IOException{
+	public static void outputByStrain(int outputFormat, int threshold) throws IOException{
 			File file = new File("E:\\work\\关联公司\\原始数据\\系族分");
 			String[] fileList = file.list();
-			for(String fileName : fileList){
-				for(String excelName :fileList){
-					//数据存储准备
-					U.print("开始读取" + excelName);
-					Map<String, Integer> mapCompanyId = new LinkedHashMap<String, Integer>();//记录每个公司所对应的id
-					Map<Integer, String> mapIdCompany = new HashMap<Integer, String>();//记录每个id所对应的公司
-					int id = 0;//下标从0开始
-					byte[][] matrix = new byte[1000][1000];
+			for(String excelName :fileList){
+				//数据存储准备
+				U.print("开始读取" + excelName);
+				Map<String, Integer> mapCompanyId = new LinkedHashMap<String, Integer>();//记录每个公司所对应的id
+				Map<Integer, String> mapIdCompany = new HashMap<Integer, String>();//记录每个id所对应的公司
+				byte[][] matrix = new byte[1000][1000];
+				String excelAddress = "E:\\work\\关联公司\\原始数据\\系族分\\" + excelName;
+				U.getMatrix(matrix, mapIdCompany, mapCompanyId, excelAddress);//获取网络矩阵
 					
-					//读取一份excel，将其中公司两两的关系写入
-					XSSFSheet sheet = ExcelFunction.getSheet_XSSF("E:\\work\\关联公司\\原始数据\\系族分\\" + excelName, 0);
-					int rowCount = sheet.getLastRowNum();
-					for(int k = 1 ; k < rowCount ; k++){
-						//访问公司名
-						XSSFCell cellCompanyName = sheet.getRow(k).getCell(M.EXCELINDEX_CompanyName);
-						//有些excel后面有空行
-						if(cellCompanyName == null) break;
-						String name = U.getCellStringValue(cellCompanyName).trim().replace(" ", "").replaceAll(" ", "");
-						if(U.needContinue(name)) continue;//去掉两个空的公司名(中英文空格)
-						if(mapCompanyId.get(name) == null){//如果该公司并不在map中，则为其添加一个id
-							mapCompanyId.put(name, id);
-							mapIdCompany.put(id, name);//同时为该id对应到company
-							id++;
-						}
-						//访问关联公司
-						XSSFCell cellAssociatedCompany = sheet.getRow(k).getCell(M.EXCELINDEX_AssociatedCompany);
-						String asName = U.getCellStringValue(cellAssociatedCompany).trim().replaceAll(" ", "");
-						
-						asName = asName.replaceAll(",", "、");//2014的excel中切割标示用的是','
-						String[] names = asName.split("、");
-						for(String n : names){
-							if(U.needContinue(n)) continue;//去掉两个空的公司名(中英文空格)
-							if(mapCompanyId.get(n) == null){//如果该公司并不在map中，则为其添加一个下标
-								mapCompanyId.put(n, id);
-								mapIdCompany.put(id, n);//同时为该id对应到company
-								id++;
-							}
-							//绘制单向，由主体公司指向关联公司
-							matrix[mapCompanyId.get(name)][mapCompanyId.get(n)] = 1;//这里没有给线赋权
-							if(direction == 2)//双向箭头有两个矩阵格都需要+1
-								matrix[mapCompanyId.get(n)][mapCompanyId.get(name)] = 1;
-						}
-					}
+				//读取matrix，只选取高于阈值的公司id
+				List<Integer> idList = U.getIdList_ModeHowManyCompany(matrix, mapCompanyId.size(), threshold);
 					
-					//读取matrix，只选取高于阈值的公司id
-					List<Integer> idList = U.getIdList_ModeHowManyCompany(matrix, mapCompanyId.size(), threshold);
-					
-					//输出.net文件
-					String temp = "";
-					if(direction == 1)
-						temp = "E:\\work\\关联公司\\txt\\系族\\单向图\\" + excelName;
-					else 
-						temp = "E:\\work\\关联公司\\txt\\系族\\双向图\\" + excelName;
-					if(outputFormat == M.OUTPUTFORMAT_NETWeight){//输出网络
-						String address = temp.substring(0, temp.length()-4) + "net";
-						FileFunction.writeNet_Weight(idList, mapIdCompany, matrix, address);
-					}
-					else if(outputFormat == M.OUTPUTFORMAT_COMPANYTYPE){//输出A股颜色
-						Map<String, Integer> map = FileFunction.readMap_SI("E:\\work\\关联公司\\txt\\companyType.txt");
-						String address = temp.substring(0, temp.length()-5) + "colorA.net";
-						FileFunction.writeNet_Color(idList, mapIdCompany, matrix, address, M.COLOR_COMPANYTYPE, map);
-					}
+				//输出.net文件
+				String temp = "E:\\work\\关联公司\\txt\\系族\\双向图\\" + excelName;
+				if(outputFormat == M.OUTPUTFORMAT_NETWeight){//输出网络
+					String address = temp.substring(0, temp.length()-4) + "net";
+					FileFunction.writeNet_Weight(idList, mapIdCompany, matrix, address);
+				}
+				else if(outputFormat == M.OUTPUTFORMAT_COMPANYTYPE){//输出A股颜色
+					Map<String, Integer> map = FileFunction.readMap_SI("E:\\work\\关联公司\\txt\\companyType.txt");
+					String address = temp.substring(0, temp.length()-5) + "colorA.net";
+					FileFunction.writeNet_Color(idList, mapIdCompany, matrix, address, M.COLOR_COMPANYTYPE, map);
 				}
 			}
 		U.print("done");
@@ -587,109 +468,49 @@ public class ProProcess {
 		U.print("done");
 	}
 	
+	
+	
+	
+	
+	
+	
 	//输出结构化的中心性分析的txt
-	public static void outputCentrality(int year) throws IOException{
-		List<String> list = FileFunction.readFile("E:\\work\\关联公司\\txt\\中心度研究\\" + year + "_建筑与房地产.txt");
-		List<String> output = new ArrayList<String>();
-		for(int i = 15; i < list.size(); i++){
-			String line = list.get(i);
-			if(line.equals("")) break;
-			output.add(line.replaceAll(" {2,}", ","));
-		}
-		FileWriter fw = new FileWriter("E:\\work\\关联公司\\txt\\中心度研究\\output\\result_" + year + "_建筑与房地产.txt");
-		for(int i = 0; i < output.size(); i++){
-			fw.write(output.get(i) + "\r\n");
-		}
-		fw.close();
-		U.print("done");
+	public static void outputCentrality(String txtName) throws IOException{
+		FileFunction.writeCentrality(txtName);
 	}
 	//输出结构化的结构洞分析的txt
-	public static void outputStructualHoles() throws IOException{
-		String txtName = "2011_全数据";
-		List<String> list = FileFunction.readFile("E:\\work\\关联公司\\txt\\结构洞研究\\" + txtName + ".txt");
-		List<String> output = new ArrayList<String>();
-		for(int i = 14; i < list.size(); i++){
-			String line = list.get(i);
-			if(line.equals("")) break;
-			output.add(line.trim().replaceAll(" {2,}", ","));
-		}
-		FileWriter fw = new FileWriter("E:\\work\\关联公司\\txt\\结构洞研究\\output\\result_" + txtName + ".txt");
-		for(int i = 0; i < output.size(); i++){
-			fw.write(output.get(i) + "\r\n");
-		}
-		fw.close();
-		U.print("done");
+	public static void outputStructualHoles(String txtName) throws IOException{
+		FileFunction.writeStructualHoles(txtName);
 	}
 	
+	//输出公司分类
 	public static void outputPartition(String classify, int year) throws NumberFormatException, IOException{
-		List<String> cpList = readCompanyName("E:\\work\\关联公司\\txt\\nettxt_asCompany" + year + "_false_1_10.net");
-		FileWriter fw = new FileWriter("E:\\work\\关联公司\\txt\\partition_" + classify + "_" + year + ".txt");
-		fw.write("dl nr = " + cpList.size() + ", nc = 1 format = edgelist2" + "\r\n");
-		fw.write("row labels embedded" + "\r\n");
-		fw.write("col labels embedded" + "\r\n");
-		fw.write("data:" + "\r\n");
+		List<String> cpList = FileFunction.readCompanyName("E:\\work\\关联公司\\txt\\nettxt_asCompany" + year + "_false_1_10.net");
+		String address = "E:\\work\\关联公司\\txt\\partition_" + classify + "_" + year + ".txt";
 		if(classify.equals(M.Classify_EquityOwnership)){
-			Map<String, String> map = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType_按企业性质.txt");
-			for(String cpName : cpList){
-				cpName = cpName.trim().replaceAll(" ", "");
-				int type = 0;
-				if(map.get(cpName) == null)
-					type = 3;
-				else if(map.get(cpName).equals("国企企业关联交易"))
-					type = 0;
-				else if(map.get(cpName).equals("民营企业关联交易"))
-					type = 1;
-				else if(map.get(cpName).equals("外资控股关联交易"))
-					type = 2;
-				
-				if(type == 3)
-					U.print(cpName);
-				
-				fw.write(cpName + " type " + type + "\r\n");
-			}
+			Map<String, String> mapCompanyClassify = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType_按企业性质.txt");
+			Map<String, Integer> mapClassifyType = new HashMap<>();
+			mapClassifyType.put("国企企业关联交易", 0);
+			mapClassifyType.put("民营企业关联交易", 1);
+			mapClassifyType.put("外资控股关联交易", 2);
+			FileFunction.writePartition(cpList, mapCompanyClassify, mapClassifyType, address);
 		}
 		else if(classify.equals(M.Classify_Industry)){
-			Map<String, String> map = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType_按行业.txt");
-			for(String cpName : cpList){
-				cpName = cpName.trim().replaceAll(" ", "");
-				int type = 0;
-				if(map.get(cpName) == null)
-					type = 3;
-				else if(map.get(cpName).equals("建筑与房地产业关联交易"))
-					type = 0;
-				else if(map.get(cpName).equals("制造业关联交易"))
-					type = 1;
-				else if(map.get(cpName).equals("批发零售关联交易"))
-					type = 2;
-				
-				if(type == 3)
-					U.print(cpName);
-				
-				fw.write(cpName + " type " + type + "\r\n");
-			}
+			Map<String, String> mapCompanyClassify = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType_按行业.txt");
+			Map<String, Integer> mapClassifyType = new HashMap<>();
+			mapClassifyType.put("建筑与房地产业关联交易", 0);
+			mapClassifyType.put("制造业关联交易", 1);
+			mapClassifyType.put("批发零售关联交易", 2);
+			FileFunction.writePartition(cpList, mapCompanyClassify, mapClassifyType, address);
 		}
-//		else if(classify.equals(M.Classify_TransactionType)){
-//			Map<String, String> map = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType_按交易类型.txt");
-//			for(String cpName : cpList){
-//				cpName = cpName.trim().replaceAll(" ", "");
-//				int type = 0;
-//				if(map.get(cpName) == null)
-//					type = 3;
-//				else if(map.get(cpName).equals("担保类关联交易--国企"))
-//					type = 0;
-//				else if(map.get(cpName).equals("民营企业关联交易"))
-//					type = 1;
-//				else if(map.get(cpName).equals("外资控股关联交易"))
-//					type = 2;
-//				
-//				if(type == 3)
-//					U.print(cpName);
-//				
-//				fw.write(cpName + " type " + type + "\r\n");
-//			}
-//		}
-		fw.close();
-		U.print("done");
+		else if(classify.equals(M.Classify_TransactionType)){
+			Map<String, String> mapCompanyClassify = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType_按交易类型.txt");
+			Map<String, Integer> mapClassifyType = new HashMap<>();
+			mapClassifyType.put("担保类关联交易--国企", 0);
+			mapClassifyType.put("民营企业关联交易", 1);
+			mapClassifyType.put("外资控股关联交易", 2);
+			FileFunction.writePartition(cpList, mapCompanyClassify, mapClassifyType, address);
+		}
 	}
 	
 }

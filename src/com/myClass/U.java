@@ -1,13 +1,17 @@
 package com.myClass;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 
+import com.db.ExcelFunction;
 import com.spreada.utils.chinese.ZHConverter;
 
 public class U {
@@ -242,5 +246,68 @@ public class U {
 		}
 		return idList;
 	}
-
+	
+	
+	//得到公司网络，即得到一个matrix，包含了公司之间两两的关系
+	//以形参的方式处理matrix，mapIdCompany，mapCompanyId
+	//处理的是公司名和关联公司两格
+	//第一个参数是网络矩阵，第二个参数是“id-公司名”map，第三个参数是“公司名-id”map，第四个参数是excel地址
+	public static void getMatrix(byte[][] matrix, Map<Integer, String> mapIdCompany, Map<String, Integer> mapCompanyId, String address) throws IOException{
+		//读取一份excel，将其中公司两两的关系写入
+		XSSFSheet sheet = ExcelFunction.getSheet_XSSF(address, 0);
+		int rowCount = sheet.getLastRowNum();
+		int id = 0;//下标从0开始
+		for(int k = 1 ; k < rowCount ; k++){
+			//访问公司名
+			XSSFCell cellCompanyName = sheet.getRow(k).getCell(M.EXCELINDEX_CompanyName);
+			//有些excel后面有空行
+			if(cellCompanyName == null) break;
+			String name = getCellStringValue(cellCompanyName).trim().replace(" ", "").replaceAll(" ", "");
+			if(needContinue(name)) continue;//去掉两个空的公司名(中英文空格)
+			if(mapCompanyId.get(name) == null){//如果该公司并不在map中，则为其添加一个id
+				mapCompanyId.put(name, id);
+				mapIdCompany.put(id, name);//同时为该id对应到company
+				id++;
+			}
+			//访问关联公司
+			XSSFCell cellAssociatedCompany = sheet.getRow(k).getCell(M.EXCELINDEX_AssociatedCompany);
+			String asName = getCellStringValue(cellAssociatedCompany).trim().replaceAll(" ", "");
+			
+			asName = asName.replaceAll(",", "、");//2014的excel中切割标示用的是','
+			String[] names = asName.split("、");
+			for(String n : names){
+				if(needContinue(n)) continue;//去掉两个空的公司名(中英文空格)
+				if(mapCompanyId.get(n) == null){//如果该公司并不在map中，则为其添加一个下标
+					mapCompanyId.put(n, id);
+					mapIdCompany.put(id, n);//同时为该id对应到company
+					id++;
+				}
+				//绘制单向，由主体公司指向关联公司
+				matrix[mapCompanyId.get(name)][mapCompanyId.get(n)] = 1;//这里没有给线赋权
+				matrix[mapCompanyId.get(n)][mapCompanyId.get(name)] = 1;//双向箭头有两个矩阵格都需要+1
+			}
+		}
+	}
+	
+	//获取excel每一个n个字段的值，以list<String>的方式返回
+	public static List<List<String>> getRowsList(String fileName, int... fields) throws IOException{
+		List<List<String>> lists = new ArrayList<List<String>>();
+		
+		HSSFCell cell = null;
+		int sheetNumber = ExcelFunction.getSheetNumber(fileName);
+		for(int j = 0; j < sheetNumber; j++){
+			HSSFSheet sheet = ExcelFunction.getSheet(fileName, j);
+			int rowCount = sheet.getLastRowNum();
+			for(int k = 1 ; k < rowCount ; k++){
+				List<String> list = new ArrayList<String>();
+				for(int field : fields){
+					cell = sheet.getRow(k).getCell(field);
+					String value = U.getCellStringValue(cell).trim().replaceAll(" ", "");
+					list.add(value);
+				}
+				lists.add(list);
+			}
+		}
+		return lists;
+	}
 }

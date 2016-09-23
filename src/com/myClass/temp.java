@@ -54,4 +54,40 @@ public class temp {
 //		}
 //		fw.close();
 //	}
+	
+//	//读取一份excel，将其中公司两两的关系写入
+//	XSSFSheet sheet = ExcelFunction.getSheet_XSSF("E:\\work\\关联公司\\原始数据\\关联交易数据库--分类处理\\" + year + "\\" + fileName + "\\" + excelName, 0);
+//	int rowCount = sheet.getLastRowNum();
+//	int id = 0;//下标从0开始
+//	for(int k = 1 ; k < rowCount ; k++){
+//		//访问公司名
+//		XSSFCell cellCompanyName = sheet.getRow(k).getCell(M.EXCELINDEX_CompanyName);
+//		//有些excel后面有空行
+//		if(cellCompanyName == null) break;
+//		String name = U.getCellStringValue(cellCompanyName).trim().replace(" ", "").replaceAll(" ", "");
+//		if(U.needContinue(name)) continue;//去掉两个空的公司名(中英文空格)
+//		if(mapCompanyId.get(name) == null){//如果该公司并不在map中，则为其添加一个id
+//			mapCompanyId.put(name, id);
+//			mapIdCompany.put(id, name);//同时为该id对应到company
+//			id++;
+//		}
+//		//访问关联公司
+//		XSSFCell cellAssociatedCompany = sheet.getRow(k).getCell(M.EXCELINDEX_AssociatedCompany);
+//		String asName = U.getCellStringValue(cellAssociatedCompany).trim().replaceAll(" ", "");
+//		
+//		asName = asName.replaceAll(",", "、");//2014的excel中切割标示用的是','
+//		String[] names = asName.split("、");
+//		for(String n : names){
+//			if(U.needContinue(n)) continue;//去掉两个空的公司名(中英文空格)
+//			if(mapCompanyId.get(n) == null){//如果该公司并不在map中，则为其添加一个下标
+//				mapCompanyId.put(n, id);
+//				mapIdCompany.put(id, n);//同时为该id对应到company
+//				id++;
+//			}
+//			//绘制单向，由主体公司指向关联公司
+//			matrix[mapCompanyId.get(name)][mapCompanyId.get(n)] = 1;//这里没有给线赋权
+//			if(direction == 2)//双向箭头有两个矩阵格都需要+1
+//				matrix[mapCompanyId.get(n)][mapCompanyId.get(name)] = 1;
+//		}
+//	}
 }

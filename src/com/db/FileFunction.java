@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -120,6 +122,27 @@ public class FileFunction {
 		}
 		return map;
 	}
+	
+	//从net中读取公司名列表
+	public static List<String> readCompanyName(String path) throws NumberFormatException, IOException{
+		List<String> list = new ArrayList<String>();
+		File file = new File(path);
+		InputStreamReader stream = new InputStreamReader(new FileInputStream(file));
+		BufferedReader reader = new BufferedReader(stream);
+		//读取共有多少个公司
+		String line = reader.readLine();
+		int count = Integer.parseInt(line.substring(10, line.length()));
+		U.print("读取" + count + "家公司");
+		for(int i = 0; i < count; i++){
+			line = reader.readLine();
+			Pattern p = Pattern.compile("\".*\"");
+			Matcher m=p.matcher(line);
+			if(m.find())
+				list.add(m.group(0).substring(1, m.group(0).length()-1));
+		}
+		return list;
+	}
+	
 
 	//将Map的键值对都写入txt
 	public static void writeMap_KV(Map map, String address) throws IOException{
@@ -223,5 +246,63 @@ public class FileFunction {
 			}
 		}
 		fw.close();
+	}
+	
+	
+	//将结构洞、中心度等输出
+	//输出结构化的中心性分析的txt,形如“1,万科企业股份有限公司,3.341,0.180,2.079,0.000”
+	public static void writeCentrality(String txtName) throws IOException{
+		List<String> list = FileFunction.readFile("E:\\work\\关联公司\\txt\\中心度研究\\" + txtName + ".txt");
+		List<String> output = new ArrayList<String>();
+		for(int i = 15; i < list.size(); i++){
+			String line = list.get(i);
+			if(line.equals("")) break;
+			output.add(line.replaceAll(" {2,}", ","));
+		}
+		FileWriter fw = new FileWriter("E:\\work\\关联公司\\txt\\中心度研究\\output\\result_" + txtName + ".txt");
+		for(int i = 0; i < output.size(); i++){
+			fw.write(output.get(i) + "\r\n");
+		}
+		fw.close();
+		U.print("done");
+	}
+	//输出结构化的结构洞分析的txt,形如“深圳发展银行股份有限公司,1.000,1.000,1.000,1.000,0.000”
+	public static void writeStructualHoles(String txtName) throws IOException{
+		List<String> list = FileFunction.readFile("E:\\work\\关联公司\\txt\\结构洞研究\\" + txtName + ".txt");
+		List<String> output = new ArrayList<String>();
+		for(int i = 14; i < list.size(); i++){
+			String line = list.get(i);
+			if(line.equals("")) break;
+			output.add(line.trim().replaceAll(" {2,}", ","));
+		}
+		FileWriter fw = new FileWriter("E:\\work\\关联公司\\txt\\结构洞研究\\output\\result_" + txtName + ".txt");
+		for(int i = 0; i < output.size(); i++){
+			fw.write(output.get(i) + "\r\n");
+		}
+		fw.close();
+		U.print("done");
+	}
+	
+	
+	//输出Partition所需的格式
+	//即“天虹商场股份有限公司 type 0”这种格式
+	//第一个参数表示公司列表，第二个参数表示“公司-分类”的键值对，第三个参数表示“分类-类型数字”键值对，第四个参数表示输出的地址
+	public static void writePartition(List<String> cpList, Map<String, String> mapCompanyClassify, Map<String, Integer> mapClassifyType, String address) throws IOException{
+		FileWriter fw = new FileWriter(address);
+		fw.write("dl nr = " + cpList.size() + ", nc = 1 format = edgelist2" + "\r\n");
+		fw.write("row labels embedded" + "\r\n");
+		fw.write("col labels embedded" + "\r\n");
+		fw.write("data:" + "\r\n");
+		for(String cpName : cpList){
+			cpName = cpName.trim().replaceAll(" ", "");
+			int type = -1;
+			if(mapCompanyClassify.get(cpName) != null)
+				type = mapClassifyType.get(mapCompanyClassify.get(cpName));
+			fw.write(cpName + " type " + type + "\r\n");
+			
+			if(type == -1) U.print(cpName);
+		}
+		fw.close();
+		U.print("done");
 	}
 }
