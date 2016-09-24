@@ -12,6 +12,9 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 
 import com.db.ExcelFunction;
+import com.myClass.POI.PoiExcel2k3Helper;
+import com.myClass.POI.PoiExcel2k7Helper;
+import com.myClass.POI.PoiExcelHelper;
 import com.spreada.utils.chinese.ZHConverter;
 
 public class U {
@@ -170,7 +173,7 @@ public class U {
 	
 	//判断是否是模糊词，如“关键管理人员”
 	public static boolean needContinue(String name){
-		if(name.equals(" ")
+		if(name.equals(" ") || name.equals("")
 			|| name.contains("关键") || name.contains("董事") || name.contains("本公司") || name.contains("本集团") || name.contains("人员") || name.contains("薪酬")
 			|| name.equals("子公司") || name.equals("控股子公司") || name.equals("关键关联人员") || name.equals("主要领导和关键岗位人员") || name.equals("子公司关键人员控制或影响的公司")
 			|| name.equals("少数股东及其子公司") || name.equals("公司控股子公司") || name.equals("本公司的子公司")|| name.equals("各子公司")
@@ -293,21 +296,26 @@ public class U {
 	public static List<List<String>> getRowsList(String fileName, int... fields) throws IOException{
 		List<List<String>> lists = new ArrayList<List<String>>();
 		
-		HSSFCell cell = null;
-		int sheetNumber = ExcelFunction.getSheetNumber(fileName);
-		for(int j = 0; j < sheetNumber; j++){
-			HSSFSheet sheet = ExcelFunction.getSheet(fileName, j);
-			int rowCount = sheet.getLastRowNum();
-			for(int k = 1 ; k < rowCount ; k++){
+		PoiExcelHelper exHelper;  
+        if(fileName.indexOf(".xlsx") != -1) {  
+            exHelper = new PoiExcel2k7Helper();  
+        }else {  
+            exHelper = new PoiExcel2k3Helper();  
+        } 
+//        int sheetNumbuer = exHelper.getSheetList(fileName).size();
+        for(int i = 0; i < 1; i++){//这里要动态调节，有多个sheet才要 i<sheetNumber
+			List<ArrayList<String>> tempLists = exHelper.readExcel(fileName, i);
+			for(List<String> tempList : tempLists){
 				List<String> list = new ArrayList<String>();
 				for(int field : fields){
-					cell = sheet.getRow(k).getCell(field);
-					String value = U.getCellStringValue(cell).trim().replaceAll(" ", "");
+					String value = tempList.get(field);
+					if(needContinue(value)) continue;//去掉“关键管理人员”等
 					list.add(value);
 				}
-				lists.add(list);
+				if(list.size() < fields.length) continue;//小于，说明字段不完整
+			lists.add(list);
 			}
-		}
+        }
 		return lists;
 	}
 }

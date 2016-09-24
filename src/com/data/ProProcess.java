@@ -108,69 +108,59 @@ public class ProProcess {
 	}
 	
 	public static void outputCompanyClassfiedType() throws IOException{
-//		String typeDescribe = "按行业";
-//		String[] types = {"建筑与房地产业关联交易", "批发零售关联交易", "制造业关联交易"};
-		String typeDescribe = "按企业性质";
-		String[] types = {"国企企业关联交易", "民营企业关联交易", "外资控股关联交易"};
+		String typeDescribe = "按行业";
+		String[] types = {"建筑与房地产业关联交易", "批发零售关联交易", "制造业关联交易"};
+//		String typeDescribe = "按企业性质";
+//		String[] types = {"国企企业关联交易", "民营企业关联交易", "外资控股关联交易"};
 //		String typeDescribe = "按交易类型";
 //		String[] types = {"担保类关联交易--国企", "担保类关联交易--民营", "担保类关联交易--总库"};
 //		String[] types = {"购销关联交易--国企", "购销关联交易--民营", "购销关联交易--总库"};
 //		String[] types = {"资金往来关联交易--国企", "资金往来关联交易--民营", "资金往来关联交易--总库"};
-		//记录公司名列表
-		Map<String, String> mapCompanyType = new HashMap<String, String>();
-		//记录重复的公司列表
-		Map<String, String> mapRepeat = new HashMap<String, String>();
-		for(int year = 2011; year < 2015; year++){
+		
+		//从excel中获取数据
+		List<List<String>> lists = new ArrayList<List<String>>();
+		for(int i = 2011; i < 2015; i++){
 			for(String type : types){
-				U.print("开始读取" + year + type);
-				//读取一份excel，将其中公司两两的关系写入
-				String fileName = "E:\\work\\关联公司\\原始数据\\关联交易数据库--分类处理\\" + year + "\\" + typeDescribe + "\\" + year + type + ".xlsx";
+				String fileName = "E:\\work\\关联公司\\原始数据\\关联交易数据库--分类处理\\" + i + "\\" + typeDescribe + "\\" + i + type + ".xlsx";
 				File file = new File(fileName);
 				if(!file.exists()){
 					U.print(fileName + "不存在");
 					continue;
 				}
-				XSSFSheet sheet = ExcelFunction.getSheet_XSSF("E:\\work\\关联公司\\原始数据\\关联交易数据库--分类处理\\" + year + "\\" + typeDescribe + "\\" + year + type + ".xlsx", 0);
-				int rowCount = sheet.getLastRowNum();
-				for(int k = 1 ; k < rowCount ; k++){
-					//访问主公司
-					XSSFCell cellCompanyName = sheet.getRow(k).getCell(M.EXCELINDEX_CompanyName);
-					//有些excel后面有空行
-					if(cellCompanyName == null) break;
-					String name = U.getCellStringValue(cellCompanyName).trim().replaceAll(" ", "");
-					if(U.needContinue(name)) continue;//去掉“关键管理人员”、“董事”、空格等样本
-					if(mapCompanyType.get(name) == null){//如果该公司并不在map中，则为其添加一个type
-						mapCompanyType.put(name, type);
-					}
-					else if(!mapCompanyType.get(name).equals(type)){
-						if(mapRepeat.get(name) == null)//之前没记录过，则添加
-							mapRepeat.put(name, mapCompanyType.get(name) + "/" + type);
-						//之前已经记录过了，就再不添加
-						else if(!mapRepeat.get(name).contains(type))
-							mapRepeat.put(name, mapRepeat.get(name) + "/" + type);
-					}
-					
-					//访问关联公司
-					XSSFCell cellAssociatedCompany = sheet.getRow(k).getCell(M.EXCELINDEX_AssociatedCompany);
-					String asName = U.getCellStringValue(cellAssociatedCompany).trim().replaceAll(" ", "");
-					asName = asName.replaceAll(",", "、");//2014的excel中切割标示用的是','
-					String[] names = asName.split("、");
-					for(String n : names){
-						if(U.needContinue(n)) continue;//去掉两个空的公司名(中英文空格)
-						if(mapCompanyType.get(n) == null){//如果该公司并不在map中，则为其添加一个type
-							mapCompanyType.put(n, type);
-						}
-						else if(!mapCompanyType.get(n).equals(type)){
-							if(mapRepeat.get(n) == null)//之前没记录过，则添加
-								mapRepeat.put(n, mapCompanyType.get(n) + "/" + type);
-							//之前已经记录过了，就再不添加
-							else if(!mapRepeat.get(n).contains(type))
-								mapRepeat.put(n, mapRepeat.get(n) + "/" + type);
-						}
-					}
+				//增加type字段
+				List<List<String>> tempLists = U.getRowsList(fileName, M.EXCELINDEX_CompanyName, M.EXCELINDEX_AssociatedCompany);
+				for(int j = 0; j < tempLists.size(); j++){
+					tempLists.get(j).add(type);
+				}
+				lists.addAll(tempLists);
+			}
+		}
+		
+		//处理数据
+		Map<String, String> mapCompanyType = new HashMap<String, String>(); //记录公司名列表
+		Map<String, String> mapRepeat = new HashMap<String, String>(); //记录重复的公司列表
+		for(int i = 0; i < lists.size(); i++){
+			String company = lists.get(i).get(0);
+			String asCompnays = lists.get(i).get(1).replaceAll(",", "、"); //2014的excel中切割标示用的是',';
+			String type = lists.get(i).get(2);
+			//获取所有名字列表
+			String tempCompanys = asCompnays + "、" + company;
+			String[] names = tempCompanys.split("、");
+			
+			//遍历所有公司名进行处理
+			for(String name : names){
+				if(mapCompanyType.get(name) == null){ //如果该公司并不在map中，则为其添加一个type
+					mapCompanyType.put(name, type);
+				}
+				else if(!mapCompanyType.get(name).equals(type)){
+					if(mapRepeat.get(name) == null) //之前没记录过，则添加
+						mapRepeat.put(name, mapCompanyType.get(name) + "/" + type);
+					else if(!mapRepeat.get(name).contains(type)) //之前已经记录过了，就再不添加
+						mapRepeat.put(name, mapRepeat.get(name) + "/" + type);
 				}
 			}
 		}
+		
 		FileFunction.writeMap_KV(mapCompanyType, "E:\\work\\关联公司\\txt\\companyType_" + typeDescribe + ".txt");//将公司type写入txt
 		FileFunction.writeMap_KV(mapRepeat, "E:\\work\\关联公司\\txt\\repeat_" + typeDescribe + ".txt");//将重复type写入txt
 	}
@@ -184,58 +174,49 @@ public class ProProcess {
 //		String[] types = {"担保类关联交易--国企", "担保类关联交易--民营", "担保类关联交易--总库"};
 //		String[] types = {"购销关联交易--国企", "购销关联交易--民营", "购销关联交易--总库"};
 //		String[] types = {"资金往来关联交易--国企", "资金往来关联交易--民营", "资金往来关联交易--总库"};
-		for(int year = 2011; year < 2015; year++){
-			Map<String, String> mapCompanyType = new HashMap<String, String>();//记录公司名列表
-			Map<String, String> mapRepeat = new HashMap<String, String>();//记录重复的公司列表
+		for(int year = 2011; year < 2012; year++){
+			//从excel中获取数据
+			List<List<String>> lists = new ArrayList<List<String>>();
 			for(String type : types){
-				U.print("开始读取" + year + type);
-				//读取一份excel，将其中公司两两的关系写入
 				String fileName = "E:\\work\\关联公司\\原始数据\\关联交易数据库--分类处理\\" + year + "\\" + typeDescribe + "\\" + year + type + ".xlsx";
 				File file = new File(fileName);
 				if(!file.exists()){
 					U.print(fileName + "不存在");
 					continue;
 				}
-				XSSFSheet sheet = ExcelFunction.getSheet_XSSF("E:\\work\\关联公司\\原始数据\\关联交易数据库--分类处理\\" + year + "\\" + typeDescribe + "\\" + year + type + ".xlsx", 0);
-				int rowCount = sheet.getLastRowNum();
-				for(int k = 1 ; k < rowCount ; k++){
-					//访问主公司
-					XSSFCell cellCompanyName = sheet.getRow(k).getCell(M.EXCELINDEX_CompanyName);
-					//有些excel后面有空行
-					if(cellCompanyName == null) break;
-					String name = U.getCellStringValue(cellCompanyName).trim().replaceAll(" ", "");
-					if(U.needContinue(name)) continue;//去掉“关键管理人员”、“董事”、空格等样本
-					if(mapCompanyType.get(name) == null){//如果该公司并不在map中，则为其添加一个type
+				//增加type字段
+				List<List<String>> tempLists = U.getRowsList(fileName, M.EXCELINDEX_CompanyName, M.EXCELINDEX_AssociatedCompany);
+				for(int j = 0; j < tempLists.size(); j++){
+					tempLists.get(j).add(type);
+				}
+				lists.addAll(tempLists);
+			}
+			
+			//处理数据
+			Map<String, String> mapCompanyType = new HashMap<String, String>(); //记录公司名列表
+			Map<String, String> mapRepeat = new HashMap<String, String>(); //记录重复的公司列表
+			for(int i = 0; i < lists.size(); i++){
+				String company = lists.get(i).get(0);
+				String asCompnays = lists.get(i).get(1).replaceAll(",", "、"); //2014的excel中切割标示用的是',';
+				String type = lists.get(i).get(2);
+				//获取所有名字列表
+				String tempCompanys = asCompnays + "、" + company;
+				String[] names = tempCompanys.split("、");
+				
+				//遍历所有公司名进行处理
+				for(String name : names){
+					if(mapCompanyType.get(name) == null){ //如果该公司并不在map中，则为其添加一个type
 						mapCompanyType.put(name, type);
 					}
 					else if(!mapCompanyType.get(name).equals(type)){
-						if(mapRepeat.get(name) == null)//之前没记录过，则添加
+						if(mapRepeat.get(name) == null) //之前没记录过，则添加
 							mapRepeat.put(name, mapCompanyType.get(name) + "/" + type);
-						//之前已经记录过了，就再不添加
-						else if(!mapRepeat.get(name).contains(type))
+						else if(!mapRepeat.get(name).contains(type)) //之前已经记录过了，就再不添加
 							mapRepeat.put(name, mapRepeat.get(name) + "/" + type);
-					}
-					
-					//访问关联公司
-					XSSFCell cellAssociatedCompany = sheet.getRow(k).getCell(M.EXCELINDEX_AssociatedCompany);
-					String asName = U.getCellStringValue(cellAssociatedCompany).trim().replaceAll(" ", "");
-					asName = asName.replaceAll(",", "、");//2014的excel中切割标示用的是','
-					String[] names = asName.split("、");
-					for(String n : names){
-						if(U.needContinue(n)) continue;//去掉两个空的公司名(中英文空格)
-						if(mapCompanyType.get(n) == null){//如果该公司并不在map中，则为其添加一个type
-							mapCompanyType.put(n, type);
-						}
-						else if(!mapCompanyType.get(n).equals(type)){
-							if(mapRepeat.get(n) == null)//之前没记录过，则添加
-								mapRepeat.put(n, mapCompanyType.get(n) + "/" + type);
-							//之前已经记录过了，就再不添加
-							else if(!mapRepeat.get(n).contains(type))
-								mapRepeat.put(n, mapRepeat.get(n) + "/" + type);
-						}
 					}
 				}
 			}
+			
 			FileFunction.writeMap_KV(mapCompanyType, "E:\\work\\关联公司\\txt\\companyType_" + typeDescribe + year + ".txt");//将公司type写入txt
 		}
 	}

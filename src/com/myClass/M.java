@@ -22,6 +22,10 @@ public class M {
 	public static int MODE_ALLCOMPANY = 10;
 	public static int MODE_ONLYA = 11;
 	
+	//Excel类型
+	public static int EXCEL_XLS = 0;
+	public static int EXCEL_XLSX = 1;
+	
 	//不同公司的类型
 	public static int COMPANYTYPE_A = 100;
 	public static int COMPANYTYPE_B = 101;//这里指的是上市的非A股公司
