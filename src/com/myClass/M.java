@@ -7,6 +7,7 @@ public class M {
 	public static int EXCELINDEX_StockSymbol = 1;
 	public static int EXCELINDEX_CompanyName = 3;
 	public static int EXCELINDEX_Address = 7;
+	public static int EXCELINDEX_EquityOwnership = 11;
 	public static int EXCELINDEX_AssociatedCompany = 13;
 	public static int EXCELINDEX_TransactoinType = 20;
 	
@@ -37,12 +38,16 @@ public class M {
 	public static int COLOR_STARCOMPANY = 202;
 	
 	//不同分类类型
-	public static String Classify_EquityOwnership = "性质";
+	public static String Classify_EquityOwnership = "企业性质";
 	public static String Classify_Industry = "行业";
 	public static String Classify_TransactionType = "交易类型";
 	
+	//公司性质
+	public static String Type_EquityOwnershipNation = "企业性质_国有";
+	public static String Type_EquityOwnershipPrivate = "企业性质_民营";
+	public static String Type_EquityOwnershipForeign = "企业性质_外资";
 	//公司类型
-	public static String TransactionType_Secured = "担保";
-	public static String TransactionType_Purchase = "购销";
-	public static String TransactionType_Capital = "资金往来";
+	public static String Type_TransactionSecured = "交易类型_担保";
+	public static String Type_TransactionPurchase = "交易类型_购销";
+	public static String Type_TransactionCapital = "交易类型_资金往来";
 }

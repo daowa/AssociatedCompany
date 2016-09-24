@@ -255,39 +255,85 @@ public class U {
 	//以形参的方式处理matrix，mapIdCompany，mapCompanyId
 	//处理的是公司名和关联公司两格
 	//第一个参数是网络矩阵，第二个参数是“id-公司名”map，第三个参数是“公司名-id”map，第四个参数是excel地址
-	public static void getMatrix(byte[][] matrix, Map<Integer, String> mapIdCompany, Map<String, Integer> mapCompanyId, String address) throws IOException{
-		//读取一份excel，将其中公司两两的关系写入
-		XSSFSheet sheet = ExcelFunction.getSheet_XSSF(address, 0);
-		int rowCount = sheet.getLastRowNum();
+	public static void getMatrix(byte[][] matrix, Map<Integer, String> mapIdCompany, Map<String, Integer> mapCompanyId, String path) throws IOException{
+		int sheetNumbuer = ExcelFunction.getSheetNumber(path);
 		int id = 0;//下标从0开始
-		for(int k = 1 ; k < rowCount ; k++){
-			//访问公司名
-			XSSFCell cellCompanyName = sheet.getRow(k).getCell(M.EXCELINDEX_CompanyName);
-			//有些excel后面有空行
-			if(cellCompanyName == null) break;
-			String name = getCellStringValue(cellCompanyName).trim().replace(" ", "").replaceAll(" ", "");
-			if(needContinue(name)) continue;//去掉两个空的公司名(中英文空格)
-			if(mapCompanyId.get(name) == null){//如果该公司并不在map中，则为其添加一个id
-				mapCompanyId.put(name, id);
-				mapIdCompany.put(id, name);//同时为该id对应到company
-				id++;
-			}
-			//访问关联公司
-			XSSFCell cellAssociatedCompany = sheet.getRow(k).getCell(M.EXCELINDEX_AssociatedCompany);
-			String asName = getCellStringValue(cellAssociatedCompany).trim().replaceAll(" ", "");
-			
-			asName = asName.replaceAll(",", "、");//2014的excel中切割标示用的是','
-			String[] names = asName.split("、");
-			for(String n : names){
-				if(needContinue(n)) continue;//去掉两个空的公司名(中英文空格)
-				if(mapCompanyId.get(n) == null){//如果该公司并不在map中，则为其添加一个下标
-					mapCompanyId.put(n, id);
-					mapIdCompany.put(id, n);//同时为该id对应到company
+		for(int i = 0; i < sheetNumbuer; i++){
+			//读取一份excel，将其中公司两两的关系写入
+			XSSFSheet sheet = ExcelFunction.getSheet_XSSF(path, i);
+			int rowCount = sheet.getLastRowNum();
+			for(int k = 1 ; k < rowCount ; k++){
+				//访问公司名
+				XSSFCell cellCompanyName = sheet.getRow(k).getCell(M.EXCELINDEX_CompanyName);
+				//有些excel后面有空行
+				if(cellCompanyName == null) break;
+				String name = getCellStringValue(cellCompanyName).trim().replace(" ", "").replaceAll(" ", "");
+				if(needContinue(name)) continue;//去掉两个空的公司名(中英文空格)
+				if(mapCompanyId.get(name) == null){//如果该公司并不在map中，则为其添加一个id
+					mapCompanyId.put(name, id);
+					mapIdCompany.put(id, name);//同时为该id对应到company
 					id++;
 				}
-				//绘制单向，由主体公司指向关联公司
-				matrix[mapCompanyId.get(name)][mapCompanyId.get(n)] = 1;//这里没有给线赋权
-				matrix[mapCompanyId.get(n)][mapCompanyId.get(name)] = 1;//双向箭头有两个矩阵格都需要+1
+				//访问关联公司
+				XSSFCell cellAssociatedCompany = sheet.getRow(k).getCell(M.EXCELINDEX_AssociatedCompany);
+				String asName = getCellStringValue(cellAssociatedCompany).trim().replaceAll(" ", "");
+				
+				asName = asName.replaceAll(",", "、");//2014的excel中切割标示用的是','
+				String[] names = asName.split("、");
+				for(String n : names){
+					if(needContinue(n)) continue;//去掉两个空的公司名(中英文空格)
+					if(mapCompanyId.get(n) == null){//如果该公司并不在map中，则为其添加一个下标
+						mapCompanyId.put(n, id);
+						mapIdCompany.put(id, n);//同时为该id对应到company
+						id++;
+					}
+					//绘制单向，由主体公司指向关联公司
+					matrix[mapCompanyId.get(name)][mapCompanyId.get(n)] += 1;//这里没有给线赋权
+					matrix[mapCompanyId.get(n)][mapCompanyId.get(name)] += 1;//双向箭头有两个矩阵格都需要+1
+				}
+			}
+		}
+	}
+	public static void getMatrixHSSF(byte[][] matrix, Map<Integer, String> mapIdCompany, Map<String, Integer> mapCompanyId, String address, int mode) throws IOException{
+		int id = 0;//下标从0开始
+		int sheetNumbuer = ExcelFunction.getSheetNumber(address);
+		for(int i = 0; i < sheetNumbuer; i++){
+			//读取一份excel，将其中公司两两的关系写入
+			HSSFSheet sheet = ExcelFunction.getSheet_HSSF(address, i);
+			int rowCount = sheet.getLastRowNum();
+			for(int k = 1 ; k < rowCount ; k++){
+				if(mode == M.MODE_ONLYA){//仅A股模式下
+					HSSFCell tempCell = sheet.getRow(k).getCell(M.EXCELINDEX_StockSymbol);
+					String stockSymbol = U.getCellStringValue(tempCell).trim().replaceAll(" ", "");
+					if(!U.isA(stockSymbol))
+						continue;
+				}
+				//访问公司名
+				HSSFCell cellCompanyName = sheet.getRow(k).getCell(M.EXCELINDEX_CompanyName);
+				String name = U.getCellStringValue(cellCompanyName).trim().replaceAll(" ", "");
+				if(U.needContinue(name)) continue;//去掉“关键管理人员”、“董事”、空格等样本
+				if(mapCompanyId.get(name) == null){//如果该公司并不在map中，则为其添加一个id
+					mapCompanyId.put(name, id);
+					mapIdCompany.put(id, name);//同时为该id对应到company
+					id++;
+				}
+				//访问关联公司
+				HSSFCell cellAssociatedCompany = sheet.getRow(k).getCell(M.EXCELINDEX_AssociatedCompany);
+				String asName = U.getCellStringValue(cellAssociatedCompany).trim().replaceAll(" ", "");
+				
+				asName = asName.replaceAll(",", "、");//2014的excel中切割标示用的是','
+				String[] names = asName.split("、");
+				for(String n : names){
+					if(U.needContinue(n)) continue;//去掉“关键管理人员”、“董事”、空格等样本
+					if(mapCompanyId.get(n) == null){//如果该公司并不在map中，则为其添加一个下标
+						mapCompanyId.put(n, id);
+						mapIdCompany.put(id, n);//同时为该id对应到company
+						id++;
+					}
+					//绘制网络
+					matrix[mapCompanyId.get(name)][mapCompanyId.get(n)] += 1;
+					matrix[mapCompanyId.get(n)][mapCompanyId.get(name)] += 1;
+				}
 			}
 		}
 	}

@@ -19,14 +19,14 @@ public class AssociatedCompany{
 //		ProProcess.outputCompanyClassfiedType_Year();//按年份输出按行业、性质等公司类型
 		
 		//输出公司关系表
-		//第一个参数表示输出格式，第二个参数表示所有公司还是只有A股上市公司，第三个参数表示公司出现的阈值
-		ProProcess.outputCompanyAssociate(M.OUTPUTFORMAT_NETWeight, M.MODE_ALLCOMPANY, 1);
+		//第一个参数表示输出格式，第二个参数表示所有公司还是只有A股上市公司，第三个参数表示公司出现的阈值(>=)
+//		ProProcess.outputCompanyAssociate(M.OUTPUTFORMAT_NETSimple, M.MODE_ALLCOMPANY, 1);
 		//输出按类型分的公司关系表，第一个参数表示输出类型，第二个参数为阈值
 //		ProProcess.outputByClassification(M.OUTPUTFORMAT_NETWeight, 1);
 		//输出按系族分的公司关系表，第一个参数为阈值，第二个参数为单向还是双向箭头,第三个参数表示输出类型
 //		ProProcess.outputByStrain(M.OUTPUTFORMAT_COMPANYTYPE, 1);
-		//输出每一年的三个关系表（担保、购销、资金往来）
-//		ProProcess.outputTransactionType(M.TransactionType_Capital);
+		//输出每一年根据某个类型（如“性质-国企”）的网络，第一个参数表示类型
+		ProProcess.outputByType(M.Type_EquityOwnershipNation);
 		
 		//输出结构化的中心性分析的txt
 //		ProProcess.outputCentrality("2011_建筑与房地产");

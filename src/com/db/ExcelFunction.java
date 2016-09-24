@@ -28,7 +28,7 @@ public class ExcelFunction {
 	}
 
 	//根据excel地址和Sheet下标获取一张表格
-	public static HSSFSheet getSheet(String fileName, int sheetIndex) throws IOException{
+	public static HSSFSheet getSheet_HSSF(String fileName, int sheetIndex) throws IOException{
 		POIFSFileSystem fs = new POIFSFileSystem(new FileInputStream(fileName));
 		HSSFWorkbook wb = new HSSFWorkbook(fs);
 		HSSFSheet sheet = wb.getSheetAt(sheetIndex);

@@ -224,57 +224,13 @@ public class ProProcess {
 	
 	//将关联公司写入txt
 	public static void outputCompanyAssociate(int outputFormat,  int mode, int threshold) throws IOException{
-		HSSFCell cellCompanyName = null;
-		HSSFCell cellAssociatedCompany = null;
-		
-		for(int i = 2014; i < 2015; i++){
+		for(int i = 2014; i < 2016; i++){
+			//生成matrix
+			String path = "E:/work/关联公司/原始数据/" + i + ".xls";
 			Map<String, Integer> mapCompanyId = new LinkedHashMap<String, Integer>();//记录每个公司所对应的id
 			Map<Integer, String> mapIdCompany = new HashMap<Integer, String>();//记录每个id所对应的公司
-			int index = 0;//下标从0开始
 			byte[][] matrix = new byte[40000][40000];
-			
-			//读取一份excel，将其中公司两两的关系写入
-			String fileName = "E:/work/关联公司/原始数据/" + i + ".xls";
-			int sheetNumber = ExcelFunction.getSheetNumber(fileName);
-			U.print("开始读取:" + fileName);
-			for(int j = 0; j < sheetNumber; j++){
-				HSSFSheet sheet = ExcelFunction.getSheet(fileName, j);
-				int rowCount = sheet.getLastRowNum();
-				for(int k = 1 ; k < rowCount ; k++){
-					if(mode == M.MODE_ONLYA){//仅A股模式下
-						HSSFCell tempCell = sheet.getRow(k).getCell(M.EXCELINDEX_StockSymbol);
-						String stockSymbol = U.getCellStringValue(tempCell).trim().replaceAll(" ", "");
-						if(!U.isA(stockSymbol))
-							continue;
-					}
-					//访问公司名
-					cellCompanyName = sheet.getRow(k).getCell(M.EXCELINDEX_CompanyName);
-					String name = U.getCellStringValue(cellCompanyName).trim().replaceAll(" ", "");
-					if(U.needContinue(name)) continue;//去掉“关键管理人员”、“董事”、空格等样本
-					if(mapCompanyId.get(name) == null){//如果该公司并不在map中，则为其添加一个id
-						mapCompanyId.put(name, index);
-						mapIdCompany.put(index, name);//同时为该id对应到company
-						index++;
-					}
-					//访问关联公司
-					cellAssociatedCompany = sheet.getRow(k).getCell(M.EXCELINDEX_AssociatedCompany);
-					String asName = U.getCellStringValue(cellAssociatedCompany).trim().replaceAll(" ", "");
-					
-					asName = asName.replaceAll(",", "、");//2014的excel中切割标示用的是','
-					String[] names = asName.split("、");
-					for(String n : names){
-						if(U.needContinue(n)) continue;//去掉“关键管理人员”、“董事”、空格等样本
-						if(mapCompanyId.get(n) == null){//如果该公司并不在map中，则为其添加一个下标
-							mapCompanyId.put(n, index);
-							mapIdCompany.put(index, n);//同时为该id对应到company
-							index++;
-						}
-						//绘制网络s
-						matrix[mapCompanyId.get(name)][mapCompanyId.get(n)] += 1;
-						matrix[mapCompanyId.get(n)][mapCompanyId.get(name)] += 1;
-					}
-				}
-			}
+			U.getMatrixHSSF(matrix, mapIdCompany, mapCompanyId, path, mode);//读取一份excel，将其中公司两两的关系写入矩阵
 			U.print("文件读取结束，开始写入txt");
 			
 			//读取matrix，只选取高于阈值的公司id（目前仅适用于双向箭头）
@@ -380,11 +336,11 @@ public class ProProcess {
 	}
 	
 	//输出每一年的三个关系表（担保、购销、资金往来）
-	public static void outputTransactionType(String type) throws IOException{
+	public static void outputByType(String type) throws IOException{
 		HSSFCell cellCompanyName = null;
 		HSSFCell cellAssociatedCompany = null;
 		
-		for(int i = 2011; i < 2015; i++){
+		for(int i = 2014; i < 2015; i++){
 			Map<String, Integer> mapCompanyId = new LinkedHashMap<String, Integer>();//记录每个公司所对应的id
 			Map<Integer, String> mapIdCompany = new HashMap<Integer, String>();//记录每个id所对应的公司
 			int index = 0;//下标从0开始
@@ -395,22 +351,42 @@ public class ProProcess {
 			int sheetNumber = ExcelFunction.getSheetNumber(fileName);
 			U.print("开始读取:" + fileName);
 			for(int j = 0; j < sheetNumber; j++){
-				HSSFSheet sheet = ExcelFunction.getSheet(fileName, j);
+				HSSFSheet sheet = ExcelFunction.getSheet_HSSF(fileName, j);
 				int rowCount = sheet.getLastRowNum();
 				for(int k = 1 ; k < rowCount ; k++){
 					//判断是否属于某种交易类型
 					boolean yesPPG = false;//如果yes，则表示是该类型关系，可以写入
-					String transcationType = U.getCellStringValue(sheet.getRow(k).getCell(M.EXCELINDEX_TransactoinType));
-					transcationType = transcationType.substring(0, transcationType.length()-2);
-					if(type.equals(M.TransactionType_Secured))
-						if(transcationType.equals("1071") || transcationType.equals("1072"))
-							yesPPG = true;
-					if(type.equals(M.TransactionType_Purchase))
-						if(transcationType.equals("1011") || transcationType.equals("1012"))
-							yesPPG = true;
-					if(type.equals(M.TransactionType_Capital))
-						if(transcationType.equals("1061") || transcationType.equals("1062"))
-							yesPPG = true;
+					String typeValue = "";
+					
+					if(type.contains("交易类型")){
+						typeValue = U.getCellStringValue(sheet.getRow(k).getCell(M.EXCELINDEX_TransactoinType));
+						U.print(typeValue);
+						typeValue = typeValue.substring(0, typeValue.length()-2);
+						if(type.equals(M.Type_TransactionSecured))
+							if(typeValue.equals("1071") || typeValue.equals("1072"))
+								yesPPG = true;
+						if(type.equals(M.Type_TransactionPurchase))
+							if(typeValue.equals("1011") || typeValue.equals("1012"))
+								yesPPG = true;
+						if(type.equals(M.Type_TransactionCapital))
+							if(typeValue.equals("1061") || typeValue.equals("1062"))
+								yesPPG = true;
+					}
+					else if(type.contains("企业性质")){
+						typeValue = U.getCellStringValue(sheet.getRow(k).getCell(M.EXCELINDEX_TransactoinType));
+						U.print(typeValue);
+						typeValue = typeValue.substring(0, typeValue.length()-2);
+						if(type.equals(M.Type_EquityOwnershipNation))
+							if(typeValue.equals("0"))
+								yesPPG = true;
+						if(type.equals(M.Type_EquityOwnershipPrivate))
+							if(typeValue.equals("1"))
+								yesPPG = true;
+						if(type.equals(M.Type_EquityOwnershipForeign))
+							if(typeValue.equals("2"))
+								yesPPG = true;
+					}
+					
 					//访问公司名
 					cellCompanyName = sheet.getRow(k).getCell(M.EXCELINDEX_CompanyName);
 					String name = U.getCellStringValue(cellCompanyName).trim().replaceAll(" ", "");
@@ -434,8 +410,8 @@ public class ProProcess {
 							index++;
 						}
 						if(yesPPG){
-							matrix[mapCompanyId.get(name)][mapCompanyId.get(n)] = 1;
-							matrix[mapCompanyId.get(n)][mapCompanyId.get(name)] = 1;
+							matrix[mapCompanyId.get(name)][mapCompanyId.get(n)] += 1;
+							matrix[mapCompanyId.get(n)][mapCompanyId.get(name)] += 1;
 						}
 					}
 				}
@@ -446,8 +422,8 @@ public class ProProcess {
 			List<Integer> idList = U.getIdList_ModeHowManyCompany(matrix, mapCompanyId.size(), 0);
 			
 			//写入.net
-			String address = "E:/work/关联公司/txt/TransactionType_" + type + "_" + i + ".net";
-			FileFunction.writeNet_Weight(idList, mapIdCompany, matrix, address);
+			String address = "E:/work/关联公司/txt/类型/" + type + "_" + i + ".net";
+			FileFunction.writeNet_Simple(idList, mapIdCompany, matrix, address);//目前使用无权值的网络
 		}
 		U.print("done");
 	}
