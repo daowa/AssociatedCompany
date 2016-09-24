@@ -223,11 +223,11 @@ public class ProProcess {
 	
 	
 	//将关联公司写入txt
-	public static void outputCompanyAssociate(int outputFormat,  int mode, boolean isOneWay, int threshold) throws IOException{
+	public static void outputCompanyAssociate(int outputFormat,  int mode, int threshold) throws IOException{
 		HSSFCell cellCompanyName = null;
 		HSSFCell cellAssociatedCompany = null;
 		
-		for(int i = 2011; i < 2012; i++){
+		for(int i = 2014; i < 2015; i++){
 			Map<String, Integer> mapCompanyId = new LinkedHashMap<String, Integer>();//记录每个公司所对应的id
 			Map<Integer, String> mapIdCompany = new HashMap<Integer, String>();//记录每个id所对应的公司
 			int index = 0;//下标从0开始
@@ -269,10 +269,9 @@ public class ProProcess {
 							mapIdCompany.put(index, n);//同时为该id对应到company
 							index++;
 						}
-						//绘制单向，由主体公司指向关联公司
-						matrix[mapCompanyId.get(name)][mapCompanyId.get(n)] = 1;
-						if(!isOneWay)//如果要求双向箭头，则双向+1
-							matrix[mapCompanyId.get(n)][mapCompanyId.get(name)] = 1;
+						//绘制网络s
+						matrix[mapCompanyId.get(name)][mapCompanyId.get(n)] += 1;
+						matrix[mapCompanyId.get(n)][mapCompanyId.get(name)] += 1;
 					}
 				}
 			}
@@ -282,23 +281,27 @@ public class ProProcess {
 			List<Integer> idList = U.getIdList_ModeHowManyCompany(matrix, mapCompanyId.size(), threshold);
 			
 			//将关联公司写入txt(不敢放在别处了，再复制一个matrix内存就满了)
+			if(outputFormat == M.OUTPUTFORMAT_NETSimple){
+				String address = "E:/work/关联公司/txt/NetSimple" + i + "_" + threshold + "_" + mode + ".net";
+				FileFunction.writeNet_Simple(idList, mapIdCompany, matrix, address);
+			}
 			if(outputFormat == M.OUTPUTFORMAT_NETWeight){
-				String address = "E:/work/关联公司/txt/nettxt_asCompany" + i + "_" + isOneWay + "_" + threshold + "_" + mode + ".net";
+				String address = "E:/work/关联公司/txt/NetWeight" + i + "_" + threshold + "_" + mode + ".net";
 				FileFunction.writeNet_Weight(idList, mapIdCompany, matrix, address);
 			}
 			else if(outputFormat == M.OUTPUTFORMAT_COMPANYTYPE){
 				Map<String, Integer> map = FileFunction.readMap_SI("E:\\work\\关联公司\\txt\\companyType.txt");
-				String address = "E:/work/关联公司/txt/cpType_asCompany" + i + "_" + isOneWay + "_" + threshold + "_" + mode + ".net";
+				String address = "E:/work/关联公司/txt/NetCompanyType" + i + "_" + threshold + "_" + mode + ".net";
 				FileFunction.writeNet_Color(idList, mapIdCompany, matrix, address, M.COLOR_COMPANYTYPE, map);
 			}
 			else if(outputFormat == M.OUTPUTFORMAT_ADDRESS){
 				Map<String, String> map = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyAddress.txt");
-				String address = "E:/work/关联公司/txt/cpAddress_asCompany" + i + "_" + isOneWay + "_" + threshold + "_" + mode + ".net";
+				String address = "E:/work/关联公司/txt/NetAddress" + i + "_" + threshold + "_" + mode + ".net";
 				FileFunction.writeNet_Color(idList, mapIdCompany, matrix, address, M.COLOR_ADDRESS, map);
 			}
 			else if(outputFormat == M.OUTPUTFORMAT_STARCOMPANY){
 				String star = "中外运空运发展股份有限公司";
-				String address = "E:/work/关联公司/txt/StarCompany" + star + i + ".net";
+				String address = "E:/work/关联公司/txt/NetStarCompany" + star + i + ".net";
 				Map<String, String> map = new HashMap<>();
 				map.put("star", star);
 				FileFunction.writeNet_Color(idList, mapIdCompany, matrix, address, M.COLOR_STARCOMPANY, map);

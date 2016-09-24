@@ -12,7 +12,7 @@ public class M {
 	
 	//输出关联公司时的输出格式
 	public static int OUTPUTFORMAT_DL = 0;
-	public static int OUTPUTFORMAT_NET = 1;//pajek所需的.net格式的文件，只包含点，以及点之间是否有连线
+	public static int OUTPUTFORMAT_NETSimple = 1;//pajek所需的.net格式的文件，只包含点，以及点之间是否有连线
 	public static int OUTPUTFORMAT_NETWeight = 2;//pajek所需的.net格式的文件，包含权重
 	public static int OUTPUTFORMAT_COMPANYTYPE = 3;
 	public static int OUTPUTFORMAT_ADDRESS = 4;

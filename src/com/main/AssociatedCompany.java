@@ -19,8 +19,8 @@ public class AssociatedCompany{
 //		ProProcess.outputCompanyClassfiedType_Year();//按年份输出按行业、性质等公司类型
 		
 		//输出公司关系表
-		//第一个参数表示输出格式，第二个参数表示所有公司还是只有A股上市公司，第三个参数表示是否是单向箭头，第四个参数表示公司出现的阈值
-//		ProProcess.outputCompanyAssociate(M.OUTPUTFORMAT_STARCOMPANY, M.MODE_ALLCOMPANY, false, 1);
+		//第一个参数表示输出格式，第二个参数表示所有公司还是只有A股上市公司，第三个参数表示公司出现的阈值
+		ProProcess.outputCompanyAssociate(M.OUTPUTFORMAT_NETWeight, M.MODE_ALLCOMPANY, 1);
 		//输出按类型分的公司关系表，第一个参数表示输出类型，第二个参数为阈值
 //		ProProcess.outputByClassification(M.OUTPUTFORMAT_NETWeight, 1);
 		//输出按系族分的公司关系表，第一个参数为阈值，第二个参数为单向还是双向箭头,第三个参数表示输出类型

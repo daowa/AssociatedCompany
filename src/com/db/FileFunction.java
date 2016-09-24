@@ -175,7 +175,7 @@ public class FileFunction {
 	//将关联网络输出成pajek可以读取的格式
 	//输出成为.net格式，仅包含点，以及点之间是否有连线
 	//第一个参数是id列表，第二个参数是“id-公司”的map,第三个对象是写入的地址
-	public static void writeNet_Simple(List<Integer> idList, Map<Integer, String> mapIdCompany, String address) throws IOException{
+	public static void writeNet_Simple(List<Integer> idList, Map<Integer, String> mapIdCompany, byte[][] matrix, String address) throws IOException{
 		FileWriter fw = new FileWriter(address);
 		fw.write("*Vertices " + idList.size());
 		for(int fwi = 0; fwi < idList.size(); fwi++){
@@ -186,8 +186,10 @@ public class FileFunction {
 		fw.write("*Edges");
 		for(int fwi = 0; fwi < idList.size(); fwi++){
 			for(int fwj = 0; fwj < idList.size(); fwj++){
-				fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-				fw.write((fwi+1) + " " + (fwj+1));
+				if(matrix[idList.get(fwi)][idList.get(fwj)] > 0){
+					fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
+					fw.write((fwi+1) + " " + (fwj+1));
+				}
 			}
 		}
 		fw.close();
