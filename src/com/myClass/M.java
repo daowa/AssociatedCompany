@@ -6,8 +6,9 @@ public class M {
 	//excel的下标
 	public static int EXCELINDEX_StockSymbol = 1;
 	public static int EXCELINDEX_CompanyName = 3;
+	public static int EXCELINDEX_Industry = 5;//所处行业
 	public static int EXCELINDEX_Address = 7;
-	public static int EXCELINDEX_EquityOwnership = 11;
+	public static int EXCELINDEX_EquityOwnership = 10;
 	public static int EXCELINDEX_AssociatedCompany = 13;
 	public static int EXCELINDEX_TransactoinType = 20;
 	
@@ -19,9 +20,13 @@ public class M {
 	public static int OUTPUTFORMAT_ADDRESS = 4;
 	public static int OUTPUTFORMAT_STARCOMPANY = 5;//只有一家公司标示为红色
 	
-	//模式
+	//关联交易网络的模式
 	public static int MODE_ALLCOMPANY = 10;
 	public static int MODE_ONLYA = 11;
+	//根据类型输出网络的模式
+	public static int MODETYPE_ALL = 12;
+	public static int MODETYPE_ONLYSELECTED = 13;//满足所有条件才通过，如“国营-担保”
+	public static int MODETYPE_ALLSELECTED = 14;//只要满足一个条件就通过，如“国营-民营”
 	
 	//Excel类型
 	public static int EXCEL_XLS = 0;
@@ -39,15 +44,17 @@ public class M {
 	
 	//不同分类类型
 	public static String Classify_EquityOwnership = "企业性质";
-	public static String Classify_Industry = "行业";
+	public static String Classify_Industry = "所处行业";
 	public static String Classify_TransactionType = "交易类型";
+	public static String CLassify_Ownership_Ownership = "性质_性质";//0924Q1问题中，“国有-民营”共同网络的partition
 	
 	//公司性质
 	public static String Type_EquityOwnershipNation = "企业性质_国有";
 	public static String Type_EquityOwnershipPrivate = "企业性质_民营";
 	public static String Type_EquityOwnershipForeign = "企业性质_外资";
 	//公司类型
-	public static String Type_TransactionSecured = "交易类型_担保";
 	public static String Type_TransactionPurchase = "交易类型_购销";
+	public static String Type_TransactionGoodsPurchase = "交易类型_商品购销";
+	public static String Type_TransactionSecured = "交易类型_担保";
 	public static String Type_TransactionCapital = "交易类型_资金往来";
 }

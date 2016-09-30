@@ -1,29 +1,16 @@
 package com.data;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hwpf.model.types.HRESIAbstractType;
-import org.apache.poi.xssf.usermodel.XSSFCell;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
 
 import com.db.ExcelFunction;
 import com.db.FileFunction;
@@ -69,7 +56,7 @@ public class ProProcess {
 	public static Map<String, Integer> outputCompanyType() throws IOException{
 		//从excel中获取数据
 		List<List<String>> lists = new ArrayList<List<String>>();
-		for(int i = 2011; i < 2015; i++){
+		for(int i = 2015; i < 2016; i++){
 			String fileName = "E:/work/关联公司/原始数据/" + i + ".xls";
 			lists.addAll(U.getRowsList(fileName, M.EXCELINDEX_CompanyName, M.EXCELINDEX_StockSymbol));
 		}
@@ -107,33 +94,20 @@ public class ProProcess {
 		return map;
 	}
 	
-	public static void outputCompanyClassfiedType() throws IOException{
-		String typeDescribe = "按行业";
-		String[] types = {"建筑与房地产业关联交易", "批发零售关联交易", "制造业关联交易"};
-//		String typeDescribe = "按企业性质";
-//		String[] types = {"国企企业关联交易", "民营企业关联交易", "外资控股关联交易"};
-//		String typeDescribe = "按交易类型";
-//		String[] types = {"担保类关联交易--国企", "担保类关联交易--民营", "担保类关联交易--总库"};
-//		String[] types = {"购销关联交易--国企", "购销关联交易--民营", "购销关联交易--总库"};
-//		String[] types = {"资金往来关联交易--国企", "资金往来关联交易--民营", "资金往来关联交易--总库"};
+	public static void outputCompanyClassfiedType(String classify) throws IOException{
+		int excelIndex = -1;
+		if(classify.equals(M.Classify_EquityOwnership))
+			excelIndex = M.EXCELINDEX_EquityOwnership;
+		else if(classify.equals(M.Classify_TransactionType))
+			excelIndex = M.EXCELINDEX_TransactoinType;
+		else if(classify.equals(M.Classify_Industry))
+			excelIndex = M.EXCELINDEX_Industry;
 		
 		//从excel中获取数据
 		List<List<String>> lists = new ArrayList<List<String>>();
-		for(int i = 2011; i < 2015; i++){
-			for(String type : types){
-				String fileName = "E:\\work\\关联公司\\原始数据\\关联交易数据库--分类处理\\" + i + "\\" + typeDescribe + "\\" + i + type + ".xlsx";
-				File file = new File(fileName);
-				if(!file.exists()){
-					U.print(fileName + "不存在");
-					continue;
-				}
-				//增加type字段
-				List<List<String>> tempLists = U.getRowsList(fileName, M.EXCELINDEX_CompanyName, M.EXCELINDEX_AssociatedCompany);
-				for(int j = 0; j < tempLists.size(); j++){
-					tempLists.get(j).add(type);
-				}
-				lists.addAll(tempLists);
-			}
+		for(int i = 2015; i < 2016; i++){
+			String fileName = "E:\\work\\关联公司\\原始数据\\" + i + ".xls";
+			lists.addAll(U.getRowsList(fileName, M.EXCELINDEX_CompanyName, M.EXCELINDEX_AssociatedCompany, excelIndex));
 		}
 		
 		//处理数据
@@ -142,7 +116,36 @@ public class ProProcess {
 		for(int i = 0; i < lists.size(); i++){
 			String company = lists.get(i).get(0);
 			String asCompnays = lists.get(i).get(1).replaceAll(",", "、"); //2014的excel中切割标示用的是',';
-			String type = lists.get(i).get(2);
+			String typeValue = lists.get(i).get(2);
+			
+			String type = "";
+			if(classify.equals(M.Classify_EquityOwnership)){
+				//t-test需要只有两种type，所以只能粗略地将两者分离，非此即彼
+				if(U.checkTypeValue(typeValue, M.Type_EquityOwnershipNation))
+					type = "国有";
+				else
+					type = "民营";
+				//正常状态
+//				if(U.checkTypeValue(typeValue, M.Type_EquityOwnershipNation))
+//					type = "国有";
+//				else if(U.checkTypeValue(typeValue, M.Type_EquityOwnershipPrivate))
+//					type = "民营";
+//				else if(U.checkTypeValue(typeValue, M.Type_EquityOwnershipForeign))
+//					type = "外资";
+//				else 
+//					type = "其它性质";
+			}
+			else if(classify.equals(M.Classify_TransactionType)){
+				if(U.checkTypeValue(typeValue, M.Type_TransactionPurchase))
+					type = "购销";
+				else if(U.checkTypeValue(typeValue, M.Type_TransactionSecured))
+					type = "担保";
+				else if(U.checkTypeValue(typeValue, M.Type_TransactionCapital))
+					type = "资金往来";
+				else
+					type = "其它交易类型";
+			}
+			
 			//获取所有名字列表
 			String tempCompanys = asCompnays + "、" + company;
 			String[] names = tempCompanys.split("、");
@@ -161,20 +164,20 @@ public class ProProcess {
 			}
 		}
 		
-		FileFunction.writeMap_KV(mapCompanyType, "E:\\work\\关联公司\\txt\\companyType_" + typeDescribe + ".txt");//将公司type写入txt
-		FileFunction.writeMap_KV(mapRepeat, "E:\\work\\关联公司\\txt\\repeat_" + typeDescribe + ".txt");//将重复type写入txt
+		FileFunction.writeMap_KV(mapCompanyType, "E:\\work\\关联公司\\txt\\companyType_" + classify + ".txt");//将公司type写入txt
+		FileFunction.writeMap_KV(mapRepeat, "E:\\work\\关联公司\\txt\\repeat_" + classify + ".txt");//将重复type写入txt
 	}
 	
 	public static void outputCompanyClassfiedType_Year() throws IOException{
-		String typeDescribe = "按行业";
-		String[] types = {"建筑与房地产业关联交易", "批发零售关联交易", "制造业关联交易"};
-//		String typeDescribe = "按企业性质";
-//		String[] types = {"国企企业关联交易", "民营企业关联交易", "外资控股关联交易"};
+//		String typeDescribe = "按行业";
+//		String[] types = {"建筑与房地产业关联交易", "批发零售关联交易", "制造业关联交易"};
+		String typeDescribe = "按企业性质";
+		String[] types = {"国企企业关联交易", "民营企业关联交易", "外资控股关联交易"};
 //		String typeDescribe = "按交易类型";
 //		String[] types = {"担保类关联交易--国企", "担保类关联交易--民营", "担保类关联交易--总库"};
 //		String[] types = {"购销关联交易--国企", "购销关联交易--民营", "购销关联交易--总库"};
 //		String[] types = {"资金往来关联交易--国企", "资金往来关联交易--民营", "资金往来关联交易--总库"};
-		for(int year = 2011; year < 2012; year++){
+		for(int year = 2015; year < 2016; year++){
 			//从excel中获取数据
 			List<List<String>> lists = new ArrayList<List<String>>();
 			for(String type : types){
@@ -336,15 +339,15 @@ public class ProProcess {
 	}
 	
 	//输出每一年的三个关系表（担保、购销、资金往来）
-	public static void outputByType(String type) throws IOException{
+	public static void outputByType(int mode, String... types) throws IOException{
 		HSSFCell cellCompanyName = null;
 		HSSFCell cellAssociatedCompany = null;
 		
-		for(int i = 2014; i < 2015; i++){
+		for(int i = 2015; i < 2016; i++){
 			Map<String, Integer> mapCompanyId = new LinkedHashMap<String, Integer>();//记录每个公司所对应的id
 			Map<Integer, String> mapIdCompany = new HashMap<Integer, String>();//记录每个id所对应的公司
 			int index = 0;//下标从0开始
-			byte[][] matrix = new byte[32767][32767];//UCINET最多支持那么多，超过那么多需要换个方法
+			byte[][] matrix = new byte[40000][40000];
 			
 			//读取一份excel，将其中公司两两的关系写入
 			String fileName = "E:/work/关联公司/原始数据/" + i + ".xls";
@@ -355,36 +358,21 @@ public class ProProcess {
 				int rowCount = sheet.getLastRowNum();
 				for(int k = 1 ; k < rowCount ; k++){
 					//判断是否属于某种交易类型
-					boolean yesPPG = false;//如果yes，则表示是该类型关系，可以写入
+					List<Integer> yesPPG = new ArrayList<>();//记录是否满足type的标准
 					String typeValue = "";
-					
-					if(type.contains("交易类型")){
-						typeValue = U.getCellStringValue(sheet.getRow(k).getCell(M.EXCELINDEX_TransactoinType));
-						U.print(typeValue);
-						typeValue = typeValue.substring(0, typeValue.length()-2);
-						if(type.equals(M.Type_TransactionSecured))
-							if(typeValue.equals("1071") || typeValue.equals("1072"))
-								yesPPG = true;
-						if(type.equals(M.Type_TransactionPurchase))
-							if(typeValue.equals("1011") || typeValue.equals("1012"))
-								yesPPG = true;
-						if(type.equals(M.Type_TransactionCapital))
-							if(typeValue.equals("1061") || typeValue.equals("1062"))
-								yesPPG = true;
-					}
-					else if(type.contains("企业性质")){
-						typeValue = U.getCellStringValue(sheet.getRow(k).getCell(M.EXCELINDEX_TransactoinType));
-						U.print(typeValue);
-						typeValue = typeValue.substring(0, typeValue.length()-2);
-						if(type.equals(M.Type_EquityOwnershipNation))
-							if(typeValue.equals("0"))
-								yesPPG = true;
-						if(type.equals(M.Type_EquityOwnershipPrivate))
-							if(typeValue.equals("1"))
-								yesPPG = true;
-						if(type.equals(M.Type_EquityOwnershipForeign))
-							if(typeValue.equals("2"))
-								yesPPG = true;
+					for(String type : types){
+						if(type.contains("交易类型")){
+							typeValue = U.getCellStringValue(sheet.getRow(k).getCell(M.EXCELINDEX_TransactoinType));
+							U.print(typeValue);
+							typeValue = typeValue.substring(0, typeValue.length()-2);
+							if(U.checkTypeValue(typeValue, type)) yesPPG.add(1);
+						}
+						if(type.contains("企业性质")){
+							typeValue = U.getCellStringValue(sheet.getRow(k).getCell(M.EXCELINDEX_EquityOwnership)).trim();
+							if(typeValue.equals("")) typeValue = "##";//2014年有些数据没有typeValue
+							typeValue = typeValue.substring(0, typeValue.length()-2);
+							if(U.checkTypeValue(typeValue, type)) yesPPG.add(10);
+						}
 					}
 					
 					//访问公司名
@@ -399,7 +387,6 @@ public class ProProcess {
 					//访问关联公司
 					cellAssociatedCompany = sheet.getRow(k).getCell(M.EXCELINDEX_AssociatedCompany);
 					String asName = U.getCellStringValue(cellAssociatedCompany).trim().replaceAll(" ", "");
-					
 					asName = asName.replaceAll(",", "、");//2014的excel中切割标示用的是','
 					String[] names = asName.split("、");
 					for(String n : names){
@@ -409,7 +396,11 @@ public class ProProcess {
 							mapIdCompany.put(index, n);//同时为该id对应到company
 							index++;
 						}
-						if(yesPPG){
+						if(mode == M.MODETYPE_ONLYSELECTED && yesPPG.size() == types.length){//满足所有条件才通过，如“国营-担保”
+							matrix[mapCompanyId.get(name)][mapCompanyId.get(n)] += 1;
+							matrix[mapCompanyId.get(n)][mapCompanyId.get(name)] += 1;
+						}
+						else if(mode == M.MODETYPE_ALLSELECTED && U.getSumList(yesPPG) >= (10 + types.length-2)){//对于“国营-民营”类型，只要有一个10就行；对于“国营-民营-购销”，需要有11
 							matrix[mapCompanyId.get(name)][mapCompanyId.get(n)] += 1;
 							matrix[mapCompanyId.get(n)][mapCompanyId.get(name)] += 1;
 						}
@@ -419,10 +410,15 @@ public class ProProcess {
 			U.print("文件读取结束，开始写入txt");
 			
 			//读取matrix
-			List<Integer> idList = U.getIdList_ModeHowManyCompany(matrix, mapCompanyId.size(), 0);
+			int threshold = (mode == M.MODETYPE_ALL) ? 0 : 1;
+			List<Integer> idList = U.getIdList_ModeHowManyCompany(matrix, mapCompanyId.size(), threshold);
 			
 			//写入.net
-			String address = "E:/work/关联公司/txt/类型/" + type + "_" + i + ".net";
+			String outputTypes = "";
+			for(String type : types)
+				outputTypes += type + "&";
+			String sMode = (mode == M.MODETYPE_ALL) ? "所有节点" : "仅选定节点";
+			String address = "E:/work/关联公司/txt/类型/" + sMode + "#" + outputTypes.substring(0, outputTypes.length()-1) + "_" + i + ".net";
 			FileFunction.writeNet_Simple(idList, mapIdCompany, matrix, address);//目前使用无权值的网络
 		}
 		U.print("done");
@@ -444,19 +440,22 @@ public class ProProcess {
 	}
 	
 	//输出公司分类
-	public static void outputPartition(String classify, int year) throws NumberFormatException, IOException{
-		List<String> cpList = FileFunction.readCompanyName("E:\\work\\关联公司\\txt\\nettxt_asCompany" + year + "_false_1_10.net");
-		String address = "E:\\work\\关联公司\\txt\\partition_" + classify + "_" + year + ".txt";
+	public static void outputPartition(String classify) throws NumberFormatException, IOException{
 		if(classify.equals(M.Classify_EquityOwnership)){
-			Map<String, String> mapCompanyClassify = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType_按企业性质.txt");
+			List<String> cpList = FileFunction.readCompanyName("E:\\work\\关联公司\\txt\\nettxt_asCompany2011_false_1_10.net");
+			String address = "E:\\work\\关联公司\\txt\\partition_" + classify + "_2011.txt";
+			Map<String, String> mapCompanyClassify = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType_" + M.Classify_EquityOwnership + ".txt");
 			Map<String, Integer> mapClassifyType = new HashMap<>();
-			mapClassifyType.put("国企企业关联交易", 0);
-			mapClassifyType.put("民营企业关联交易", 1);
-			mapClassifyType.put("外资控股关联交易", 2);
+			mapClassifyType.put("国有", 0);
+			mapClassifyType.put("民营", 1);
+			mapClassifyType.put("外资", 2);
+			mapClassifyType.put("其它性质", -1);
 			FileFunction.writePartition(cpList, mapCompanyClassify, mapClassifyType, address);
 		}
 		else if(classify.equals(M.Classify_Industry)){
-			Map<String, String> mapCompanyClassify = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType_按行业.txt");
+			List<String> cpList = FileFunction.readCompanyName("E:\\work\\关联公司\\txt\\nettxt_asCompany2011_false_1_10.net");
+			String address = "E:\\work\\关联公司\\txt\\partition_" + classify + "_2011.txt";
+			Map<String, String> mapCompanyClassify = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType_" + M.Classify_Industry + ".txt");
 			Map<String, Integer> mapClassifyType = new HashMap<>();
 			mapClassifyType.put("建筑与房地产业关联交易", 0);
 			mapClassifyType.put("制造业关联交易", 1);
@@ -464,11 +463,25 @@ public class ProProcess {
 			FileFunction.writePartition(cpList, mapCompanyClassify, mapClassifyType, address);
 		}
 		else if(classify.equals(M.Classify_TransactionType)){
-			Map<String, String> mapCompanyClassify = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType_按交易类型.txt");
+			List<String> cpList = FileFunction.readCompanyName("E:\\work\\关联公司\\txt\\nettxt_asCompany2011_false_1_10.net");
+			String address = "E:\\work\\关联公司\\txt\\partition_" + classify + "_2011.txt";
+			Map<String, String> mapCompanyClassify = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType_" + M.Classify_TransactionType + ".txt");
 			Map<String, Integer> mapClassifyType = new HashMap<>();
-			mapClassifyType.put("担保类关联交易--国企", 0);
-			mapClassifyType.put("民营企业关联交易", 1);
-			mapClassifyType.put("外资控股关联交易", 2);
+			mapClassifyType.put("购销", 0);
+			mapClassifyType.put("担保", 1);
+			mapClassifyType.put("资金往来", 2);
+			mapClassifyType.put("其它交易类型", -1);
+			FileFunction.writePartition(cpList, mapCompanyClassify, mapClassifyType, address);
+		}
+		else if(classify.equals(M.CLassify_Ownership_Ownership)){
+			List<String> cpList = FileFunction.readCompanyName("E:\\work\\关联公司\\txt\\类型\\仅选定节点#企业性质_国有&企业性质_民营&交易类型_商品购销_2015.net");
+			String address = "E:\\work\\关联公司\\txt\\类型\\partition_" + classify + "_2015.txt";
+			Map<String, String> mapCompanyClassify = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType_" + M.Classify_EquityOwnership + ".txt");
+			Map<String, Integer> mapClassifyType = new HashMap<>();
+			mapClassifyType.put("国有", 0);
+			mapClassifyType.put("民营", 1);
+			mapClassifyType.put("外资", 2);
+			mapClassifyType.put("其它性质", 3);
 			FileFunction.writePartition(cpList, mapCompanyClassify, mapClassifyType, address);
 		}
 	}
