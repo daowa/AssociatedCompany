@@ -174,8 +174,8 @@ public class FileFunction {
 	
 	//将关联网络输出成pajek可以读取的格式
 	//输出成为.net格式，仅包含点，以及点之间是否有连线
-	//第一个参数是id列表，第二个参数是“id-公司”的map,第三个对象是写入的地址
-	public static void writeNet_Simple(List<Integer> idList, Map<Integer, String> mapIdCompany, byte[][] matrix, String address) throws IOException{
+	//第一个参数表示是否有向，第二个参数是id列表，第三个参数是“id-公司”的map，第四个参数是关系矩阵（引用传递），第五个参数是写入的地址
+	public static void writeNet_Simple(boolean direct, List<Integer> idList, Map<Integer, String> mapIdCompany, byte[][] matrix, String address) throws IOException{
 		FileWriter fw = new FileWriter(address);
 		fw.write("*Vertices " + idList.size());
 		for(int fwi = 0; fwi < idList.size(); fwi++){
@@ -183,7 +183,10 @@ public class FileFunction {
 			fw.write((fwi+1) + " \"" + mapIdCompany.get(idList.get(fwi)) + "\"");
 		}
 		fw.write("\r\n");
-		fw.write("*Edges");
+		if(direct)
+			fw.write("*Arcs");
+		else
+			fw.write("*Edges");
 		for(int fwi = 0; fwi < idList.size(); fwi++){
 			for(int fwj = 0; fwj < idList.size(); fwj++){
 				if(matrix[idList.get(fwi)][idList.get(fwj)] > 0){
@@ -215,6 +218,29 @@ public class FileFunction {
 		}
 		fw.close();
 		U.print("已输出到" + address);
+	}
+	//第一个参数是是否有向，第二个参数是id列表，第三个参数是“id-公司”的map，第四个参数是关系矩阵（引用传递），第五个参数是交易金额矩阵（引用传递），第六个参数是写入的地址
+	public static void writeNet_AmountWeight(boolean direct, List<Integer> idList, Map<Integer, String> mapIdCompany, byte[][] matrix, int[][] matrixWeight, String address) throws IOException{
+		FileWriter fw = new FileWriter(address);
+		fw.write("*Vertices " + idList.size());
+		for(int fwi = 0; fwi < idList.size(); fwi++){
+			fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
+			fw.write((fwi+1) + " \"" + mapIdCompany.get(idList.get(fwi)) + "\"");
+		}
+		fw.write("\r\n");
+		if(direct)
+			fw.write("*Arcs");
+		else
+			fw.write("*Edges");
+		for(int fwi = 0; fwi < idList.size(); fwi++){
+			for(int fwj = 0; fwj < idList.size(); fwj++){
+				if(matrix[idList.get(fwi)][idList.get(fwj)] > 0){
+					fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
+					fw.write((fwi+1) + " " + (fwj+1) + " " + matrixWeight[idList.get(fwi)][idList.get(fwj)]);
+				}
+			}
+		}
+		fw.close();
 	}
 	//第一个参数是id列表，第二个参数是“id-公司”的map,第三个参数是关系矩阵（引用传递），第四个对象是写入的地址，第五个参数是确定颜色的规则, 第六个参数是“公司-属性”的map（用于确定颜色 ，可不填）
 	public static void writeNet_Color(List<Integer> idList, Map<Integer, String> mapIdCompany, byte[][] matrix, String address, int colorRule, Map map) throws IOException{
@@ -301,6 +327,21 @@ public class FileFunction {
 			if(mapCompanyClassify.get(cpName) != null)
 				type = mapClassifyType.get(mapCompanyClassify.get(cpName));
 			fw.write(cpName + " type " + type + "\r\n");
+			
+			if(type == -1) U.print(cpName);
+		}
+		fw.close();
+		U.print("done");
+	}
+	public static void writePajekPartition(List<String> cpList, Map<String, String> mapCompanyClassify, Map<String, Integer> mapClassifyType, String address) throws IOException{
+		FileWriter fw = new FileWriter(address);
+		fw.write("*Vertices " + cpList.size() + "\r\n");
+		for(String cpName : cpList){
+			cpName = cpName.trim().replaceAll(" ", "");
+			int type = -1;
+			if(mapCompanyClassify.get(cpName) != null)
+				type = mapClassifyType.get(mapCompanyClassify.get(cpName));
+			fw.write(type + "\r\n");
 			
 			if(type == -1) U.print(cpName);
 		}

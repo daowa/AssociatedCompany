@@ -1,10 +1,13 @@
 package com.myClass;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -25,6 +28,9 @@ public class U {
 	}
 	public static void print(int i){
 		System.out.println(i + "");
+	}
+	public static void print(double d){
+		System.out.println(d + "");
 	}
 	public static void print(String[] ss){
 		String result = "";
@@ -48,7 +54,8 @@ public class U {
                 cellValue=" ";      
             break;      
         case HSSFCell.CELL_TYPE_NUMERIC: //数值类型   
-            cellValue = String.valueOf(cell.getNumericCellValue());      
+        	DecimalFormat df = new DecimalFormat("0");  
+            cellValue = df.format(cell.getNumericCellValue()); 
             break;      
         case HSSFCell.CELL_TYPE_FORMULA: //公式   
             cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);      
@@ -219,6 +226,11 @@ public class U {
 			return true;
 		if(firstThree.contains("603"))
 			return true;
+		return false;
+	}
+	//判断是否是B股公司
+	public static boolean isB(String stockSymbol){
+		String firstThree = stockSymbol.substring(0,3);
 		if(firstThree.contains("000"))
 			return true;
 		return false;
@@ -257,18 +269,35 @@ public class U {
 	
 	//根据阈值，返回网络中高于阈值的idList
 	//这里的判断方式：该公司与n家公司发生关联交易，且n>=threshold，则通过。这里采用的是双向图
-	//第一个参数是网络图矩阵，第二个参数是实际网络的节点数，第三个参数是阈值
-	public static List<Integer> getIdList_ModeHowManyCompany(byte[][] matrix, int nodeCount, int threshold){
+	//第一个参数是网络图矩阵，第二个参数是实际网络的节点数，第三个参数是阈值，第四个参数表示是否是有向图
+	public static List<Integer> getIdList_ModeHowManyCompany(byte[][] matrix, int nodeCount, int threshold, boolean direct){
 		List<Integer> idList = new ArrayList<>();//存放高于阈值的id
-		for(int idi = 0; idi < nodeCount; idi++){
-			int frequency = 0;
-			for(int idj = 0; idj < nodeCount; idj++){
-				//统计该公司出现的频率（目前仅适用于双向箭头）
-				if(matrix[idi][idj] > 0)
-					frequency += matrix[idi][idj];
+		if(!direct){
+			for(int idi = 0; idi < nodeCount; idi++){
+				int frequency = 0;
+				for(int idj = 0; idj < nodeCount; idj++){
+					//统计该公司出现的频率（目前仅适用于双向箭头）
+					if(matrix[idi][idj] > 0)
+						frequency += 1;
+				}
+				if(frequency >= threshold)
+					idList.add(idi);
 			}
-			if(frequency >= threshold)
-				idList.add(idi);
+		}
+		else{
+			for(int idi = 0; idi < nodeCount; idi++){
+				int frequency = 0;
+				for(int idj = 0; idj < nodeCount; idj++){
+					//统计该公司出现的频率
+					//同时统计一个id所在的行和列
+					if(matrix[idi][idj] > 0)
+						frequency += 1;
+					if(matrix[idj][idi] > 0)
+						frequency += 1;
+				}
+				if(frequency >= threshold)
+					idList.add(idi);
+			}
 		}
 		return idList;
 	}
@@ -391,7 +420,7 @@ public class U {
 	//通过传入的数据字段，检查是否是某个性质（如是否是国营企业）
 	//如传入“1011”与“M.Type_TransactionPurchase”，返回true，因为1011是“交易-购销”类型s
 	//第一个参数是typeValue，第二个参数是需要判断是否属于的type
-	public static boolean checkTypeValue(String typeValue, String type){
+	public static boolean checkTypeValue(String typeValue, String type, List<String>... lists){
 		boolean b = false;
 		//交易类型
 		if(type.equals(M.Type_TransactionPurchase) && (typeValue.equals("1011") || typeValue.equals("1012")))
@@ -403,12 +432,40 @@ public class U {
 		else if(type.equals(M.Type_TransactionCapital) && (typeValue.equals("1061") || typeValue.equals("1062")))
 			b = true;
 		//企业性质
-		else if(type.equals(M.Type_EquityOwnershipNation) && (typeValue.equals("0")))
+		else if(type.equals(M.Type_EquityOwnershipAll))
+			b = true;
+		else if(type.equals(M.Type_EquityOwnershipNation) && typeValue.equals("0"))
 			b = true;
 		else if(type.equals(M.Type_EquityOwnershipPrivate) && typeValue.equals("1"))
 			b = true;
 		else if(type.equals(M.Type_EquityOwnershipForeign) && typeValue.equals("2"))
 			b = true;
+		else if(type.equals(M.Type_EquityOwnershipYangQi) && lists[0].contains(typeValue))
+			b = true;
+		//所处行业
+		else if(type.equals(M.Type_IndustryRealty) && (typeValue.contains("J") || typeValue.contains("K")));//K是社会服务业，万科和招商地产以及一些物业公司都在这里
+			b = true;
 		return b;
 	}
+	
+	
+	
+	//获得央企的股票编号
+    public static List<String> getYangQiStockSymbol(List<String> rawList){
+    	List<String> result = new ArrayList<>();
+    	for(int i = 0; i < rawList.size(); i++){
+    		Pattern pattern = Pattern.compile("[0-9]{6}");
+    		Matcher matcher = pattern.matcher(rawList.get(i));
+    		if(matcher.find())
+    			result.add(matcher.group(0));
+    	}
+    	return result;
+    }
+    
+    //判断交易方向
+    public static boolean directFromListCompany(String transcationType){
+    	if(Integer.parseInt(transcationType) % 2 == 0)
+    		return false;
+    	return true;
+    }
 }
