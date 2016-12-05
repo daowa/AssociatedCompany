@@ -5,6 +5,7 @@ import java.sql.SQLException;
 
 import com.data.ProProcess;
 import com.data.SCBloger;
+import com.db.FileFunction;
 import com.db.WordFunction;
 import com.myClass.M;
 import com.myClass.U;
@@ -26,10 +27,16 @@ public class AssociatedCompany{
 //		ProProcess.outputByClassification(M.OUTPUTFORMAT_NETWeight, 1);
 		//输出按系族分的公司关系表，第一个参数为阈值，第二个参数为单向还是双向箭头,第三个参数表示输出类型
 //		ProProcess.outputByStrain(M.OUTPUTFORMAT_COMPANYTYPE, 1);
+		
 		//输出每一年根据某个类型（如“性质-国企”）的网络
-		//第一个参数表示类型，第二个参数表示阈值，第三个参数表示线的权值，
+		//第一个参数表示类型，第二个参数表示点的阈值，第三个参数表示线的权值，
 		//第四个参数表示是否有向图，第五个参数表示网络性质，第六个参数表示网络是购销还是担保等网络
-//		ProProcess.outputByType(M.MODETYPE_ONLYSELECTED_WEIGHT, 1, 1000, true, M.Type_EquityOwnershipAll, M.Type_IndustryRealty);
+//		ProProcess.outputByType(M.MODETYPE_ONLYSELECTED_WEIGHT, 1, 1
+//				, true, M.Type_EquityOwnershipSubNet, M.Type_TransactionAll);
+		//输出地区关联交易表
+		//第一个参数表示点的阈值，第二个参数表示线的阈值（以亿为单位）
+		//第三个参数表示交易的类型，第四个参数表示公司的类型
+//		ProProcess.outputDistrictNet(M.MODEDISTRICT_NOINNER, 1, 1, M.Type_TransactionAll, M.Type_EquityOwnershipAll);
 		
 		//输出结构化的中心性分析的txt
 //		ProProcess.outputCentrality("2011_建筑与房地产");
@@ -37,6 +44,9 @@ public class AssociatedCompany{
 //		ProProcess.outputStructualHoles("2011_全数据");
 		//输出作为partition（或者actor attribute）的公司类型2-模矩阵
 		ProProcess.outputPartition(M.Classify_ListedCompany);
+		
+		//删除正常的条目，留在有披露不充分的excel
+//		ProProcess.onlyVague();
 		
 //		WordFunction.test();
 		

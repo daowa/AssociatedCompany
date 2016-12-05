@@ -5,6 +5,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -165,6 +166,11 @@ public class U {
 		result = Math.sqrt(Math.abs(MATH_getVariance(inputData)));
 		return result;
 	}
+	//四舍五入
+	public static int MATH_getRounding(double d){
+		int result = d-(int)d-0.5 > 0 ? (int)d+1 : (int)d;
+		return result;
+	}
 	
 	
 	
@@ -208,12 +214,12 @@ public class U {
 			|| name.equals("参股公司") || name.equals("矿业公司") || name.equals("全资子公司") || name.equals("其他小额") || name.equals("同系子公司")
 			|| name.equals("企业缴存") || name.equals("个人缴存") || name.equals("联营公司") || name.equals("下属子公司") || name.equals("退休金供款")
 			|| name.equals("五家供应商") || name.equals("李世江先生") || name.equals("工资社保") || name.equals("Kobe") || name.equals("Schio")
-			|| name.equals("Italy") || name.equals("同母系公司")
+			|| name.equals("Italy") || name.equals("同母系公司") || name.equals("商品房购承人")
 			|| name.contains("特保") || name.contains("报酬") || name.contains("配偶") || name.contains("董事") || name.contains("薪酬")
 			|| name.contains("关键") || name.contains("董事") || name.contains("本公司") || name.contains("本集团") || name.contains("人员")
 			|| name.contains("股东") || name.contains("关联方") || name.contains("监事") || name.contains("夫妇") || name.contains("亲属")
 			|| name.contains("控制人") || name.contains("自然人") || name.contains("板块") || name.contains("妻子") || name.contains("高管")
-			|| name.contains("总经理") || name.contains("夫妻"))
+			|| name.contains("总经理") || name.contains("夫妻") || name.contains("经济利润奖金") || name.contains("最终母公司") || name.contains("赵洁红"))
 			return true;
 		return false;
 	}
@@ -423,7 +429,9 @@ public class U {
 	public static boolean checkTypeValue(String typeValue, String type, List<String>... lists){
 		boolean b = false;
 		//交易类型
-		if(type.equals(M.Type_TransactionPurchase) && (typeValue.equals("1011") || typeValue.equals("1012")))
+		if(type.equals(M.Type_TransactionAll))
+			b = true;
+		else if(type.equals(M.Type_TransactionPurchase) && (typeValue.equals("1011") || typeValue.equals("1012")))
 			b = true;
 		else if(type.equals(M.Type_TransactionGoodsPurchase) && (typeValue.equals("1011") || typeValue.equals("1012") || typeValue.equals("1041") || typeValue.equals("1042")))
 			b = true;
@@ -440,10 +448,17 @@ public class U {
 			b = true;
 		else if(type.equals(M.Type_EquityOwnershipForeign) && typeValue.equals("2"))
 			b = true;
+		//央企
 		else if(type.equals(M.Type_EquityOwnershipYangQi) && lists[0].contains(typeValue))
 			b = true;
+		//指定子网络（按公司名）
+		else if(type.equals(M.Type_EquityOwnershipSubNet) && lists[1].contains(typeValue))
+			b = true;
+		//指定子网络（按公司股票代码）
+		else if(type.equals(M.Type_EquityOwnerShipSubNet_Symbol) && lists[2].contains(typeValue))
+			b = true;
 		//所处行业
-		else if(type.equals(M.Type_IndustryRealty) && (typeValue.contains("J") || typeValue.contains("K")));//K是社会服务业，万科和招商地产以及一些物业公司都在这里
+		else if(type.equals(M.Type_IndustryRealty) && (typeValue.contains("J") || typeValue.contains("K")))//K是社会服务业，万科和招商地产以及一些物业公司都在这里
 			b = true;
 		return b;
 	}
@@ -468,4 +483,131 @@ public class U {
     		return false;
     	return true;
     }
+    
+    //将币值都转换为元
+    //2016年11月18日汇率
+    public static int getRMB(int money, String currency){
+    	double result = 0;
+    	if(currency.equals("0"))
+    		result = money;
+    	else if(currency.equals("1"))//美元
+    		result = money * 6.8856;
+    	else if(currency.equals("2"))//港币
+    		result = money * 0.8877;
+    	else if(currency.equals("3"))//日元
+    		result = money * 0.0622;
+    	else if(currency.equals("4"))//欧元
+    		result = money * 7.2925;
+//    	else if(currency.equals("5"))//法郎
+//    		result = money * 6.8249;
+    	else if(currency.equals("6"))//马克
+    		result = money * 3.8691;
+    	else if(currency.equals("7"))//卢布
+    		result = money * 0.1056;
+    	else if(currency.equals("8"))//瑞士法郎
+    		result = money *6.8249;
+    	else if(currency.equals("9"))//澳大利亚元
+    		result = money * 5.0875;
+    	else if(currency.equals("10"))//新加坡元
+    		result = money * 4.8344;
+//    	else if(currency.equals("11"))//苏里南盾
+//    		result = money * 6.8856;
+    	else if(currency.equals("12"))//英镑
+    		result = money * 8.5535;
+    	else if(currency.equals("13"))//印度卢比
+    		result = money * 0.1011;
+    	else if(currency.equals("14"))//泰国铢
+    		result = money * 0.1936;
+    	else if(currency.equals("15"))//塞浦路斯镑
+    		result = money * 13.2728;
+    	else if(currency.equals("16"))//捷克克朗
+    		result = money * 0.2705;
+    	else if(currency.equals("17"))//挪威克朗
+    		result = money * 0.8028;
+    	else if(currency.equals("18"))//瑞典克朗
+    		result = money * 0.7440;
+    	else if(currency.equals("19"))//澳门元
+    		result = money * 0.8629;
+    	else if(currency.equals("20"))//巴西雷亚尔
+    		result = money * 2.0070;
+    	else if(currency.equals("21"))//匈牙利福林
+    		result = money * 0.0236;
+    	else if(currency.equals("22"))//兰特
+    		result = money * 0.4722;
+    	else if(currency.equals("23"))//基那
+    		result = money * 2.1843;
+    	else if(currency.equals("24"))//加拿大元
+    		result = money * 5.0909;
+    	else if(currency.equals("25"))//马拉西亚林吉特
+    		result = money * 1.5605;
+    	else if(currency.equals("26"))//荷兰盾
+    		result = money * 3.4294;
+    	else if(currency.equals("27"))//图格里克
+    		result = money * 0.0029;
+    	else if(currency.equals("28"))//哈萨克斯坦
+    		result = money * 0.01996;
+    	else if(currency.equals("29"))//韩元
+    		result = money * 0.0058;
+    	else if(currency.equals("30"))//菲律宾比索
+    		result = money * 0.1386;
+    	return (int)result;
+    }
+    
+    
+    //从公司名中提取地区
+    public static String getDistrict(String name, List<String> listDistrict, Map<String, String> mapCityDistrict){
+    	for(String district : listDistrict){//先用省进行判断
+    		if(name.contains(district))
+    			return district;
+    	}
+    	for(String key : mapCityDistrict.keySet()){//如果没有省份，那就用城市去判断
+    		if(name.contains(key)){
+    			return mapCityDistrict.get(key);
+    		}
+    	}
+    	return "";
+    }
+    
+    //去除地区名里的“省、市、自治区”等
+    public static String cleanDistrict(String str){
+    	str = str.trim().replaceAll(" ", "").replaceAll("省", "").replaceAll("自治区", "").replaceAll("市", "").replaceAll("壮族", "")
+    			.replaceAll("回族", "").replaceAll("维吾尔", "");
+    		return str;
+    }
+    //地区名称统一
+	public static String cleanCity(String str){
+	str = str.trim().replaceAll("汨罗", "岳阳").replaceAll("胶州", "青岛").replaceAll("黄岩", "台州")
+		.replaceAll("新泰", "泰安").replaceAll("通县", "北京").replaceAll("张家港", "苏州").replaceAll("龙口", "烟台").replaceAll("綦江县", "重庆")
+		.replaceAll("石景山", "北京").replaceAll("汉沽", "天津").replaceAll("老河口", "襄阳").replaceAll("株州", "株洲").replaceAll("南汇", "浦东新")
+		.replaceAll("丰台", "北京").replaceAll("顺义", "北京").replaceAll("巴南区", "重庆").replaceAll("城口县", "重庆").replaceAll("蛟河", "吉林")
+		.replaceAll("常熟", "苏州").replaceAll("浑江", "白山").replaceAll("南岸区", "重庆").replaceAll("河西", "天津").replaceAll("黔江", "重庆")
+		.replaceAll("青州", "潍坊").replaceAll("潼南", "重庆").replaceAll("凭祥", "崇左").replaceAll("诸暨", "绍兴").replaceAll("海淀", "北京")
+		.replaceAll("义马", "三门峡").replaceAll("马尾", "福州").replaceAll("巴音", "阿拉善左旗").replaceAll("六盘山", "六盘水").replaceAll("慈溪", "宁波")
+		.replaceAll("永安", "三明").replaceAll("沁阳", "焦作").replaceAll("大庸", "张家界").replaceAll("诸城", "潍坊").replaceAll("宜兴", "无锡")
+		.replaceAll("阿拉善盟", "阿拉善左旗").replaceAll("梅河口", "通化").replaceAll("垫江", "重庆").replaceAll("昆山", "苏州").replaceAll("开原", "铁岭")
+		.replaceAll("石河子", "石河子").replaceAll("金桥", "浦东新").replaceAll("淮阴", "淮安").replaceAll("瑞安", "温州").replaceAll("枣阳", "襄阳")
+		.replaceAll("静海", "天津").replaceAll("江山", "衢州").replaceAll("滕州", "枣庄").replaceAll("曲阜", "济宁").replaceAll("巢湖", "合肥")
+		.replaceAll("石狮", "泉州").replaceAll("东郊", "天津").replaceAll("川沙" , "浦东新").replaceAll("襄樊", "襄阳").replaceAll("丰都县", "重庆")
+		.replaceAll("瓦房店", "大连").replaceAll("玉林", "南宁").replaceAll("忠县", "重庆").replaceAll("江北区", "重庆").replaceAll("顺德", "佛山")
+		.replaceAll("门头沟", "北京").replaceAll("昌平", "北京").replaceAll("满州里", "呼伦贝尔").replaceAll("达县", "达州").replaceAll("迪庆", "香格里拉")
+		.replaceAll("富锦", "佳木斯").replaceAll("即墨", "青岛").replaceAll("卢湾", "黄浦").replaceAll("宣武区", "北京").replaceAll("广汉", "德阳")
+		.replaceAll("酉阳土家族苗族自治县", "重庆").replaceAll("阿城", "哈尔滨").replaceAll("松花江", "哈尔滨").replaceAll("张家港", "苏州").replaceAll("西城区", "北京")
+		.replaceAll("宿县", "宿州").replaceAll("滁县", "滁州").replaceAll("莱阳", "烟台").replaceAll("郧阳", "十堰").replaceAll("辉县", "新乡")
+		.replaceAll("崇文区", "北京").replaceAll("南川", "重庆").replaceAll("鄂西", "襄阳").replaceAll("沉阳", "沈阳").replaceAll("湘乡", "湘潭")
+		.replaceAll("哲里木盟", "通辽").replaceAll("塘沽", "天津").replaceAll("天竺出口加工区", "北京").replaceAll("丹阳", "镇江").replaceAll("醴陵", "株洲")
+		.replaceAll("九龙坡区", "重庆").replaceAll("二连", "锡林郭勒盟").replaceAll("仪征", "扬州").replaceAll("漕河泾", "徐汇区").replaceAll("思茅", "普洱")
+		.replaceAll("铁力", "伊春").replaceAll("铁法", "铁岭").replaceAll("余姚", "宁波").replaceAll("零陵", "永州").replaceAll("密山", "鸡西")
+		.replaceAll("海宁", "嘉兴").replaceAll("集安", "通化").replaceAll("江油", "绵阳").replaceAll("平度", "青岛").replaceAll("都江堰", "成都")
+		.replaceAll("兴化", "泰州").replaceAll("甘南", "齐齐哈尔").replaceAll("北票", "朝阳").replaceAll("东台", "盐城").replaceAll("来阳", "衡阳")
+		.replaceAll("番禹", "广州").replaceAll("惠民", "滨州").replaceAll("文登", "威海").replaceAll("外高桥保税区", "浦东新").replaceAll("卫辉", "新乡")
+		.replaceAll("九台", "长春").replaceAll("东兴", "防城港").replaceAll("太仓", "苏州").replaceAll("浦东", "浦东新").replaceAll("瑞昌", "九江")
+		.replaceAll("荣城", "威海").replaceAll("武安", "邯郸").replaceAll("义乌", "金华").replaceAll("图们", "延边").replaceAll("海城", "鞍山")
+		.replaceAll("锦西", "葫芦岛").replaceAll("兰溪", "金华").replaceAll("东阳", "金华").replaceAll("奉化", "宁波").replaceAll("漕河泾出口加工区", "徐汇区")
+		.replaceAll("伊克昭盟", "鄂尔多斯").replaceAll("延边", "延吉").replaceAll("萧山", "杭州").replaceAll("黔西南", "兴义").replaceAll("黔东南", "凯里")
+		.replaceAll("黔南", "都匀").replaceAll("南海", "佛山").replaceAll("银南", "固原").replaceAll("同江", "佳木斯市").replaceAll("黔东南", "凯里")
+		.replaceAll("吴江", "苏州").replaceAll("兴城", "葫芦岛").replaceAll("启东", "南通").replaceAll("禹州", "许昌").replaceAll("梧州", "贺州")
+		.replaceAll("绥芬河", "牡丹江").replaceAll("渮泽", "菏泽").replaceAll("启东", "南通").replaceAll("禹州", "许昌").replaceAll("梧州", "贺州");
+	return str;
+}
+    
 }

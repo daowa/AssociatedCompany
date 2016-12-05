@@ -124,7 +124,7 @@ public class FileFunction {
 	}
 	
 	//从net中读取公司名列表
-	public static List<String> readCompanyName(String path) throws NumberFormatException, IOException{
+	public static List<String> readCompanyNameFromNet(String path) throws NumberFormatException, IOException{
 		List<String> list = new ArrayList<String>();
 		File file = new File(path);
 		InputStreamReader stream = new InputStreamReader(new FileInputStream(file));
@@ -142,7 +142,20 @@ public class FileFunction {
 		}
 		return list;
 	}
-	
+	//从csv中读取公司名列表
+	public static List<String> readCompanyNameFromCSV(String path) throws NumberFormatException, IOException{
+		List<String> list = new ArrayList<String>();
+		File file = new File(path);
+		InputStreamReader stream = new InputStreamReader(new FileInputStream(file));
+		BufferedReader reader = new BufferedReader(stream);
+		String line = reader.readLine();
+		while((line = reader.readLine()) != null){
+			Pattern p = Pattern.compile(",.*,");
+			Matcher m = p.matcher(line);
+			if(m.find()) list.add(m.group(0).substring(1, m.group(0).length()-1));
+		}
+		return list;
+	}
 
 	//将Map的键值对都写入txt
 	public static void writeMap_KV(Map map, String address) throws IOException{
@@ -235,12 +248,104 @@ public class FileFunction {
 		for(int fwi = 0; fwi < idList.size(); fwi++){
 			for(int fwj = 0; fwj < idList.size(); fwj++){
 				if(matrix[idList.get(fwi)][idList.get(fwj)] > 0){
+					int xx = matrixWeight[idList.get(fwi)][idList.get(fwj)];
+//					int xx = U.MATH_getRounding(Math.log(matrixWeight[idList.get(fwi)][idList.get(fwj)]));
+//					int xx = (int)Math.log10(matrixWeight[idList.get(fwi)][idList.get(fwj)]);
+					if(xx <= 0) continue;
 					fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
-					fw.write((fwi+1) + " " + (fwj+1) + " " + matrixWeight[idList.get(fwi)][idList.get(fwj)]);
+					fw.write((fwi+1) + " " + (fwj+1) + " " + xx);
 				}
 			}
 		}
 		fw.close();
+	}
+	public static void writeNet_AmountWeight(List<String> listDistrict, List<Integer> idList, double[][] matrix, String address) throws IOException{
+		FileWriter fw = new FileWriter(address);
+		fw.write("*Vertices " + idList.size());
+		for(int i = 0; i < idList.size(); i++){
+			fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
+			fw.write((i+1) + " \"" + listDistrict.get(i) + "\"");
+		}
+		fw.write("\r\n");
+		fw.write("*Arcs");
+		for(int i = 0; i < idList.size(); i++){
+			for(int j = 0; j < idList.size(); j++){
+				if(matrix[idList.get(i)][idList.get(j)] > 0){//根据阈值筛选线
+//					int xx = matrixWeight[idList.get(fwi)][idList.get(fwj)];
+//					int xx = U.MATH_getRounding(Math.log(matrixWeight[idList.get(fwi)][idList.get(fwj)]));
+					int xx = (int)Math.log10(matrix[idList.get(i)][idList.get(j)]);
+					if(xx <= 0) continue;
+					fw.write("\r\n");//为上一行补充换行，避免最后一行也换行了
+					fw.write((i+1) + " " + (j+1) + " " + xx);
+				}
+			}
+		}
+		fw.close();
+	}
+	public static void writeCSV_Node(List<Integer> idList, Map<Integer, String> mapIdCompany, int[][] matrixWeight, String path) throws IOException{
+		FileWriter fw = new FileWriter(path);
+		fw.write("Id,Label,weighted degree\r\n");
+		for(int i = 0; i < idList.size(); i++){
+			double weight = 0;
+			for(int j = 0; j < idList.size(); j++){
+				if(matrixWeight[idList.get(i)][idList.get(j)] > 0){
+					weight += matrixWeight[idList.get(i)][idList.get(j)];
+				}
+			}
+			fw.write((i+1) + "," + mapIdCompany.get(idList.get(i)) + "," + (int)Math.log10(weight + 1) + "\r\n");//weight+1是为了避免weight为0的情况
+		}
+		fw.close();
+	}
+	public static void writeCSV_Node(List<Integer> idList, List<String> listDistrict, double[][] matrixWeight, String path) throws IOException{
+		FileWriter fw = new FileWriter(path);
+		fw.write("Id,Label,weighted degree\r\n");
+		for(int i = 0; i < idList.size(); i++){
+			double weight = 0;
+			for(int j = 0; j < idList.size(); j++){
+				if(matrixWeight[idList.get(i)][idList.get(j)] > 0){
+					weight += matrixWeight[idList.get(i)][idList.get(j)];
+				}
+			}
+			fw.write((i+1) + "," + listDistrict.get(i) + "," + (int)Math.log10(weight + 1) + "\r\n");//weight+1是为了避免weight为0的情况
+		}
+		fw.close();
+	}
+	public static void writeCSV_Line(List<Integer> idList, int[][] matrixWeight, String path) throws IOException{
+		FileWriter fw = new FileWriter(path);
+		fw.write("Source,Target,Type,id,label,timeset,weight\r\n");
+		int lineId = 0;
+		for(int i = 0; i < idList.size(); i++){
+			for(int j = 0; j < idList.size(); j++){
+				if(matrixWeight[idList.get(i)][idList.get(j)] > 0){
+					double weight = matrixWeight[idList.get(i)][idList.get(j)];
+					fw.write((i+1) + "," + (j+1) + "," + "Directed" + "," + lineId++ + "," + "," + "," + (int)Math.log10(weight+1) + "\r\n");
+				}
+			}
+		}
+		fw.close();
+	}
+	public static void writeCSV_Line(List<Integer> idList, double[][] matrixWeight, String path) throws IOException{
+		FileWriter fw = new FileWriter(path);
+		fw.write("Source,Target,Type,id,label,timeset,weight\r\n");
+		int lineId = 0;
+		for(int i = 0; i < idList.size(); i++){
+			for(int j = 0; j < idList.size(); j++){
+				if(matrixWeight[idList.get(i)][idList.get(j)] > 0){
+					double weight = matrixWeight[idList.get(i)][idList.get(j)];
+					fw.write((i+1) + "," + (j+1) + "," + "Directed" + "," + lineId++ + "," + "," + "," + (int)Math.log10(weight+1) + "\r\n");
+				}
+			}
+		}
+		fw.close();
+	}
+	public static void writeCSV_Patition(String pathNode, String pathPartition) throws IOException{
+		List<String> cpList = FileFunction.readCompanyNameFromCSV(pathNode);
+		Map<String, String> mapCompanyClassify = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType.txt");
+		Map<String, Integer> mapClassifyType = new HashMap<>();
+		mapClassifyType.put("100", 0);
+		mapClassifyType.put("101", 1);
+		mapClassifyType.put("102", 2);
+		FileFunction.writeCSVPartition(cpList, mapCompanyClassify, mapClassifyType, pathPartition);
 	}
 	//第一个参数是id列表，第二个参数是“id-公司”的map,第三个参数是关系矩阵（引用传递），第四个对象是写入的地址，第五个参数是确定颜色的规则, 第六个参数是“公司-属性”的map（用于确定颜色 ，可不填）
 	public static void writeNet_Color(List<Integer> idList, Map<Integer, String> mapIdCompany, byte[][] matrix, String address, int colorRule, Map map) throws IOException{
@@ -347,5 +452,20 @@ public class FileFunction {
 		}
 		fw.close();
 		U.print("done");
+	}
+	public static void writeCSVPartition(List<String> cpList, Map<String, String> mapCompanyClassify, Map<String, Integer> mapClassifyType, String path) throws IOException{
+		FileWriter fw = new FileWriter(path);
+		fw.write("Id,partition\r\n");
+		int id = 0;
+		for(String cpName : cpList){
+			cpName = cpName.trim().replaceAll(" ", "");
+			int type = -1;
+			if(mapCompanyClassify.get(cpName) != null)
+				type = mapClassifyType.get(mapCompanyClassify.get(cpName));
+			fw.write(++id + "," +  type + "\r\n");
+			
+			if(type == -1) U.print(cpName);
+		}
+		fw.close();
 	}
 }

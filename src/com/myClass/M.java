@@ -10,6 +10,7 @@ public class M {
 	public static int EXCELINDEX_Address = 7;
 	public static int EXCELINDEX_EquityOwnership = 10;
 	public static int EXCELINDEX_AssociatedCompany = 13;
+	public static int EXCELINDEX_Currency = 17;//币种
 	public static int EXCELINDEX_Amount = 19;//交易金额
 	public static int EXCELINDEX_TransactoinType = 20;
 	
@@ -29,6 +30,14 @@ public class M {
 	public static int MODETYPE_ONLYSELECTED = 13;//满足所有条件才通过，如“国营-担保”
 	public static int MODETYPE_ALLSELECTED = 14;//只要满足一个条件就通过，如“国营-民营”
 	public static int MODETYPE_ONLYSELECTED_WEIGHT = 15;//“国营-担保”类下，同时还赋予权值
+	public static int MODETYPE_ONLYSELECTED_WEIGHTCSV = 16;//权值模式下输出CSV
+	//网络中线的值是自然数还是对数
+	public static int MODEVALUE_NATURALNUMBER = 50;//自然数
+	public static int MODEVALUE_LN = 51;//以e为底的对数
+	public static int MODEVALUE_LOG10 = 52;//以10为底的对数
+	//输出地区间关联交易网路偶的模式
+	public static int MODEDISTRICT_INNER = 100;//包含地区内部的交易，可以用于看该地区的交易规模
+	public static int MODEDISTRICT_NOINNER = 101;//不包含地区内部与自身的交易，可以看不同地区间的资金转移
 	
 	//Excel类型
 	public static int EXCEL_XLS = 0;
@@ -57,7 +66,10 @@ public class M {
 	public static String Type_EquityOwnershipPrivate = "企业性质_民营";
 	public static String Type_EquityOwnershipForeign = "企业性质_外资";
 	public static String Type_EquityOwnershipYangQi = "央企";
+	public static String Type_EquityOwnershipSubNet = "子网络";
+	public static String Type_EquityOwnerShipSubNet_Symbol = "子网络_股票代码";
 	//公司类型
+	public static String Type_TransactionAll = "交易类型_所有";
 	public static String Type_TransactionPurchase = "交易类型_购销";
 	public static String Type_TransactionGoodsPurchase = "交易类型_商品购销";
 	public static String Type_TransactionSecured = "交易类型_担保";
