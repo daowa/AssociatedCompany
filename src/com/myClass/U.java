@@ -609,5 +609,16 @@ public class U {
 		.replaceAll("绥芬河", "牡丹江").replaceAll("渮泽", "菏泽").replaceAll("启东", "南通").replaceAll("禹州", "许昌").replaceAll("梧州", "贺州");
 	return str;
 }
+	
+	
+	
+	
+	
+	//将两个字符串按照排序返回
+	public static String getCompareString(String s1, String s2){
+		if(s1.compareTo(s2) < 0)
+			return s1 + "," + s2;
+		return s2 + "," + s1;
+	}
     
 }

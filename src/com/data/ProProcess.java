@@ -527,10 +527,8 @@ public class ProProcess {
 			if(mode == M.MODETYPE_ONLYSELECTED_WEIGHTCSV){
 				String pathNode = "E:/work/关联公司/txt/类型/csvnode_" + outputTypes.substring(0, outputTypes.length()-1) + "_" + i + "_阈值" + threshold + "_" + lineThreshold + ".csv";
 				String pathLine = "E:/work/关联公司/txt/类型/csvline_" + outputTypes.substring(0, outputTypes.length()-1) + "_" + i + "_阈值" + threshold + "_" + lineThreshold + ".csv";
-				String pathPartition = "E:/work/关联公司/txt/类型/csvpart_" + outputTypes.substring(0, outputTypes.length()-1) + "_" + i + "_阈值" + threshold + "_" + lineThreshold + ".csv";
 				FileFunction.writeCSV_Node(idList, mapIdCompany, matrixWeight, pathNode);
 				FileFunction.writeCSV_Line(idList, matrixWeight, pathLine);
-				FileFunction.writeCSV_Patition(pathNode, pathPartition);
 			}
 			//NET格式
 			String address = "E:/work/关联公司/txt/类型/" + outputTypes.substring(0, outputTypes.length()-1) + "_" + i + "_阈值" + threshold + sDirect + isWeight + "_" + lineThreshold + ".net";
@@ -683,10 +681,8 @@ public class ProProcess {
 			//CSV格式
 			String pathNode = "E:\\work\\关联公司\\txt\\地区\\csvnode_" + sMode + typeNode + "_" + year + "_阈值" + thresholdNode + "_" + thresholdLine + ".csv";
 			String pathLine = "E:\\work\\关联公司\\txt\\地区\\csvline_" + sMode + typeNode + "_" + year + "_阈值" + thresholdNode + "_" + thresholdLine + ".csv";
-			String pathPartition = "E:\\work\\关联公司\\txt\\地区\\csvpart_" + sMode + typeNode + "_" + year + "_阈值" + thresholdNode + "_" + thresholdLine + ".csv";
 			FileFunction.writeCSV_Node(idList, listDistrict, matrix, pathNode);
 			FileFunction.writeCSV_Line(idList, matrix, pathLine);
-			FileFunction.writeCSV_Patition(pathNode, pathPartition);
 //			else {
 //				String path = "E:\\work\\关联公司\\txt\\地区\\" + year + "_" + sMode + typeNode + "_" + typeLine + "#点阈值" + thresholdNode + "_线阈值" + thresholdLine + ".net";
 //				FileFunction.writeNet_AmountWeight(listDistrict, idList, matrix, path);
@@ -756,7 +752,7 @@ public class ProProcess {
 			FileFunction.writePartition(cpList, mapCompanyClassify, mapClassifyType, address);
 		}
 		else if(classify.equals(M.Classify_ListedCompany)){
-			List<String> cpList = FileFunction.readCompanyNameFromNet("E:\\work\\关联公司\\txt\\类型\\子网络&交易类型_所有_2015_阈值1有向#权值_1.net");
+			List<String> cpList = FileFunction.readCompanyNameFromNet("E:\\work\\关联公司\\txt\\类型\\企业性质_国有&交易类型_所有_2015_阈值1有向_1.net");
 			String address = "E:\\work\\关联公司\\txt\\类型\\partition_" + classify + "_2015.clu";//clu是pajek可读的分区文件
 			Map<String, String> mapCompanyClassify = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType.txt");
 			Map<String, Integer> mapClassifyType = new HashMap<>();

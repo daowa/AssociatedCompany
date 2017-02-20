@@ -3,11 +3,17 @@ package com.main;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import com.Others.LZ;
+import com.Others.Patent;
+import com.Others.SCBloger;
+import com.Others.SMDAFood;
+import com.Others.SMDANet;
+import com.Others.ZYY;
 import com.data.ProProcess;
-import com.data.SCBloger;
 import com.db.FileFunction;
 import com.db.WordFunction;
 import com.myClass.M;
+import com.myClass.NLPIR;
 import com.myClass.U;
 
 public class AssociatedCompany{
@@ -31,8 +37,8 @@ public class AssociatedCompany{
 		//输出每一年根据某个类型（如“性质-国企”）的网络
 		//第一个参数表示类型，第二个参数表示点的阈值，第三个参数表示线的权值，
 		//第四个参数表示是否有向图，第五个参数表示网络性质，第六个参数表示网络是购销还是担保等网络
-//		ProProcess.outputByType(M.MODETYPE_ONLYSELECTED_WEIGHT, 1, 1
-//				, true, M.Type_EquityOwnershipSubNet, M.Type_TransactionAll);
+//		ProProcess.outputByType(M.MODETYPE_ONLYSELECTED_WEIGHTCSV, 1, 1
+//				, true, M.Type_EquityOwnershipPrivate, M.Type_TransactionAll);
 		//输出地区关联交易表
 		//第一个参数表示点的阈值，第二个参数表示线的阈值（以亿为单位）
 		//第三个参数表示交易的类型，第四个参数表示公司的类型
@@ -43,7 +49,7 @@ public class AssociatedCompany{
 		//输出结构化的结构洞分析的txt(需在函数里人工调整来源和输出地址)
 //		ProProcess.outputStructualHoles("2011_全数据");
 		//输出作为partition（或者actor attribute）的公司类型2-模矩阵
-		ProProcess.outputPartition(M.Classify_ListedCompany);
+//		ProProcess.outputPartition(M.Classify_ListedCompany);
 		
 		//删除正常的条目，留在有披露不充分的excel
 //		ProProcess.onlyVague();
@@ -54,6 +60,23 @@ public class AssociatedCompany{
 //		ZYY.ZYY();
 		//绘制科学网博客的网络
 //		SCBloger.SCBlorger();
+		//商业分析课-专利分析
+//		Patent.writeNet2(M.MODETYPE_ONLYSELECTED_WEIGHTCSV);
 		
+		//刘震-聚类
+//		LZ.cluster();
+		
+		//smda的竞品网络
+		//第一个参数是点的阈值，第二个参数是线的阈值
+//		SMDANet.SMDANet2(10, 10);
+		//插入数据库
+//		SMDANet.SMDANet_toDB(10, 10);
+		//输出食物列表
+//		SMDAFood.getFoodList();
+//		SMDAFood.getFoodWordsList();
+//		SMDAFood.getFoodWordsNet(2000, 1000);
+//		NLPIR.addUserDicFromTxt();//添加用户词表
+		//食材-天气关系，插入数据库
+		SMDAFood.getFoodWordsWeatherBase();//各食材在各天气的销量
 	}
 }

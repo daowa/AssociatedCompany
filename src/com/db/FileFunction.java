@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -105,6 +106,7 @@ public class FileFunction {
 		while((line = reader.readLine()) != null){
 			if(line == "") break;//说明读到最最后一行了
 			String[] cpType = line.split("\t");
+			U.print(cpType[0] + "," + cpType[1]);
 			map.put(cpType[0], Integer.parseInt(cpType[1]));
 		}
 		return map;
@@ -153,6 +155,38 @@ public class FileFunction {
 			Pattern p = Pattern.compile(",.*,");
 			Matcher m = p.matcher(line);
 			if(m.find()) list.add(m.group(0).substring(1, m.group(0).length()-1));
+		}
+		return list;
+	}
+	//读取停用词
+	public static List<String> readTxt_StopWords(String txtAddress){
+		List<String> list = new ArrayList<String>();
+		File file = new File(txtAddress);
+		BufferedReader reader = null;
+		try {
+			reader = new BufferedReader(new FileReader(file));
+			//以行为单位读取关键词
+			String s = "";
+			while((s = reader.readLine()) != null){
+				s = s.trim();
+				if(!s.isEmpty() && s != "")
+					list.add(s);
+			}
+			reader.close();
+		} 
+		catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		finally {
+			try {
+				if(reader != null)
+					reader.close();
+			} 
+			catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		return list;
 	}
@@ -282,9 +316,18 @@ public class FileFunction {
 		}
 		fw.close();
 	}
+	
 	public static void writeCSV_Node(List<Integer> idList, Map<Integer, String> mapIdCompany, int[][] matrixWeight, String path) throws IOException{
 		FileWriter fw = new FileWriter(path);
-		fw.write("Id,Label,weighted degree\r\n");
+		fw.write("Id,Label,weighted degree,partition\r\n");
+		
+		//获得partition
+		Map<String, String> mapCompanyClassify = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType.txt");
+		Map<String, Integer> mapClassifyType = new HashMap<>();
+		mapClassifyType.put("100", 0);
+		mapClassifyType.put("101", 1);
+		mapClassifyType.put("102", 2);
+		
 		for(int i = 0; i < idList.size(); i++){
 			double weight = 0;
 			for(int j = 0; j < idList.size(); j++){
@@ -292,7 +335,12 @@ public class FileFunction {
 					weight += matrixWeight[idList.get(i)][idList.get(j)];
 				}
 			}
-			fw.write((i+1) + "," + mapIdCompany.get(idList.get(i)) + "," + (int)Math.log10(weight + 1) + "\r\n");//weight+1是为了避免weight为0的情况
+			String cpName = mapIdCompany.get(idList.get(i)).trim().replaceAll(" ", "");
+			int type = -1;
+			if(mapCompanyClassify.get(cpName) != null)
+				type = mapClassifyType.get(mapCompanyClassify.get(cpName));
+			if(type == 2) cpName = "";//对于只需要上市公司的图，则隐藏非上市公司的Label
+			fw.write((i+1) + "," + cpName + "," + (int)Math.log10(weight + 1) + "," + type + "\r\n");//weight+1是为了避免weight为0的情况
 		}
 		fw.close();
 	}
@@ -337,15 +385,6 @@ public class FileFunction {
 			}
 		}
 		fw.close();
-	}
-	public static void writeCSV_Patition(String pathNode, String pathPartition) throws IOException{
-		List<String> cpList = FileFunction.readCompanyNameFromCSV(pathNode);
-		Map<String, String> mapCompanyClassify = FileFunction.readMap_SS("E:\\work\\关联公司\\txt\\companyType.txt");
-		Map<String, Integer> mapClassifyType = new HashMap<>();
-		mapClassifyType.put("100", 0);
-		mapClassifyType.put("101", 1);
-		mapClassifyType.put("102", 2);
-		FileFunction.writeCSVPartition(cpList, mapCompanyClassify, mapClassifyType, pathPartition);
 	}
 	//第一个参数是id列表，第二个参数是“id-公司”的map,第三个参数是关系矩阵（引用传递），第四个对象是写入的地址，第五个参数是确定颜色的规则, 第六个参数是“公司-属性”的map（用于确定颜色 ，可不填）
 	public static void writeNet_Color(List<Integer> idList, Map<Integer, String> mapIdCompany, byte[][] matrix, String address, int colorRule, Map map) throws IOException{
@@ -441,31 +480,22 @@ public class FileFunction {
 	public static void writePajekPartition(List<String> cpList, Map<String, String> mapCompanyClassify, Map<String, Integer> mapClassifyType, String address) throws IOException{
 		FileWriter fw = new FileWriter(address);
 		fw.write("*Vertices " + cpList.size() + "\r\n");
+		int count = 0;
 		for(String cpName : cpList){
 			cpName = cpName.trim().replaceAll(" ", "");
 			int type = -1;
-			if(mapCompanyClassify.get(cpName) != null)
+			if(mapCompanyClassify.get(cpName) != null){
 				type = mapClassifyType.get(mapCompanyClassify.get(cpName));
+				//计算上市公司数量
+				if(type != 2)
+					count ++;
+			}
 			fw.write(type + "\r\n");
 			
 			if(type == -1) U.print(cpName);
 		}
 		fw.close();
+		U.print(count);
 		U.print("done");
-	}
-	public static void writeCSVPartition(List<String> cpList, Map<String, String> mapCompanyClassify, Map<String, Integer> mapClassifyType, String path) throws IOException{
-		FileWriter fw = new FileWriter(path);
-		fw.write("Id,partition\r\n");
-		int id = 0;
-		for(String cpName : cpList){
-			cpName = cpName.trim().replaceAll(" ", "");
-			int type = -1;
-			if(mapCompanyClassify.get(cpName) != null)
-				type = mapClassifyType.get(mapCompanyClassify.get(cpName));
-			fw.write(++id + "," +  type + "\r\n");
-			
-			if(type == -1) U.print(cpName);
-		}
-		fw.close();
 	}
 }
