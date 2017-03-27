@@ -22,6 +22,9 @@ import com.db.FileFunction;
 import com.db.WordFunction;
 import com.myClass.M;
 import com.myClass.U;
+import com.myClass.POI.PoiExcel2k3Helper;
+import com.myClass.POI.PoiExcel2k7Helper;
+import com.myClass.POI.PoiExcelHelper;
 import com.mysql.fabric.xmlrpc.base.Array;
 
 public class ProProcess {
@@ -369,9 +372,9 @@ public class ProProcess {
 			Map<String, Integer> mapCompanyId = new LinkedHashMap<String, Integer>();//记录每个公司所对应的id
 			Map<Integer, String> mapIdCompany = new HashMap<Integer, String>();//记录每个id所对应的公司
 			int index = 0;//下标从0开始
-			byte[][] matrix = new byte[20000][20000];
+			byte[][] matrix = new byte[30000][30000];
 			//如果有权值，新建一个matrix存储权值；内存空间不够，只能放10000个
-			int[][] matrixWeight = new int[20000][20000];
+			int[][] matrixWeight = new int[30000][30000];
 			
 			//读取一份excel，将其中公司两两的关系写入
 			String fileName = "E:/work/关联公司/原始数据/" + i + ".xls";
@@ -763,8 +766,7 @@ public class ProProcess {
 		}
 	}
 	
-	
-	
+
 	
 	
 	
@@ -800,6 +802,216 @@ public class ProProcess {
 			}
 		}
 		U.print("done");
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	//计算上市公司的平均中心度
+	//国有、民营TOP5子网络
+	public static void calculate_ListCompany_TOP5_AverageDegree() throws IOException{
+		int INDEX_COMPANYNAME = 1;
+		int INDEX_OUTDEGREE = 2;
+		int INDEX_INDEGREE = 3;
+		//读入2015年度上市公司名单
+		List<String> listListedCompany = new ArrayList<>();
+		String fileName = "E:/work/关联公司/原始数据/2015.xls";
+		PoiExcelHelper exHelper;  
+        exHelper = new PoiExcel2k3Helper();  
+        int sheetNumbuer = exHelper.getSheetList(fileName).size();
+        for(int i = 0; i < sheetNumbuer; i++){
+			List<ArrayList<String>> tempLists = exHelper.readExcel(fileName, i);
+			for(List<String> tempList : tempLists){
+				String listedCompany = tempList.get(M.EXCELINDEX_CompanyName);
+				if(!listListedCompany.contains(listedCompany))
+					listListedCompany.add(listedCompany);
+			}
+        }
+        
+		//读取国有、民营TOP5子网络的公司点度名单，计算平均点度
+		//初始化所有的list，为了进行t检验
+    	List<String> listAllInDegree = new ArrayList<>();
+		List<String> listAllOutDegree = new ArrayList<>();
+		List<String> listAllDegree = new ArrayList<>();
+        String[] types = {"国营", "民营"};
+        for(String type : types){
+        	for(int i = 1; i <= 5; i++){
+        		//初始化所需要计算的值
+        		List<Double> listInDegree = new ArrayList<>();
+        		List<Double> listOutDegree = new ArrayList<>();
+        		//读取数据
+        		String path = "E:\\work\\关联公司\\输出结果_按类型分\\1103国营、民营企业在关联交易行为上的区别\\成分分析\\国有民营TOP5子网络-点度分析\\" + type + "TOP" + i + ".txt";
+        		List<String> listLines = FileFunction.readFile(path);
+        		boolean isStart = false;//记录是否开始
+        		for(int j = 0; j < listLines.size(); j++){
+        			String line = listLines.get(j);
+        			if(isStart){
+        				if(line.length() == 0) break;//读到公司相关信息的最后一行了
+        				String[] data = line.replaceAll(" +", ",").split(",");
+        				if(listListedCompany.contains(data[INDEX_COMPANYNAME])){//如果是上市公司，则加入计算
+        					//单个子网络的计算
+        					listInDegree.add(Double.parseDouble(data[INDEX_INDEGREE]));
+        					listOutDegree.add(Double.parseDouble(data[INDEX_OUTDEGREE]));
+        					//整体的计算
+        					listAllInDegree.add(data[INDEX_INDEGREE] + "," + type);
+        					listAllOutDegree.add(data[INDEX_OUTDEGREE] + "," + type);
+        					double degree = Double.parseDouble(data[INDEX_INDEGREE]) + Double.parseDouble(data[INDEX_OUTDEGREE]);
+        					listAllDegree.add(degree + "," + type);
+        				}
+        			}
+        			if(!isStart && line.contains("- -")){
+        				isStart = true;
+        			}
+        		}
+        		//输出单个子网络计算结果
+        		U.print("##############");
+        		U.print(type + "TOP" + i);
+        		U.print("平均入度：" + U.MATH_getAverage(listInDegree));
+        		U.print("平均出度：" + U.MATH_getAverage(listOutDegree));
+        	}
+        }
+    	//输出整体计算结果
+		String pathIn = "E:\\work\\关联公司\\输出结果_按类型分\\1103国营、民营企业在关联交易行为上的区别\\成分分析\\国有民营TOP5子网络-点度分析\\allInDegree.txt";
+		String pathOut = "E:\\work\\关联公司\\输出结果_按类型分\\1103国营、民营企业在关联交易行为上的区别\\成分分析\\国有民营TOP5子网络-点度分析\\allOutDegree.txt";
+		String pathAll = "E:\\work\\关联公司\\输出结果_按类型分\\1103国营、民营企业在关联交易行为上的区别\\成分分析\\国有民营TOP5子网络-点度分析\\allDegree.txt";
+		FileFunction.writeList(listAllInDegree, pathIn);
+		FileFunction.writeList(listAllOutDegree, pathOut);
+		FileFunction.writeList(listAllDegree, pathAll);
+	}
+	//2015年国有民营全部
+	public static void calculate_ListCompany_ALL_AverageDegree() throws IOException{
+		int INDEX_COMPANYNAME = 1;
+		int INDEX_OUTDEGREE = 2;
+		int INDEX_INDEGREE = 3;
+		//读入2015年度上市公司名单
+		List<String> listListedCompany = new ArrayList<>();
+		String fileName = "E:/work/关联公司/原始数据/2015.xls";
+		PoiExcelHelper exHelper;  
+        exHelper = new PoiExcel2k3Helper();  
+        int sheetNumbuer = exHelper.getSheetList(fileName).size();
+        for(int i = 0; i < sheetNumbuer; i++){
+			List<ArrayList<String>> tempLists = exHelper.readExcel(fileName, i);
+			for(List<String> tempList : tempLists){
+				String listedCompany = tempList.get(M.EXCELINDEX_CompanyName);
+				if(!listListedCompany.contains(listedCompany))
+					listListedCompany.add(listedCompany);
+			}
+        }
+        
+		//读取国有、民营所有公司点度名单，计算平均点度
+		//初始化所有的list，为了进行t检验
+    	List<String> listAllInDegree = new ArrayList<>();
+		List<String> listAllOutDegree = new ArrayList<>();
+		List<String> listAllDegree = new ArrayList<>();
+        String[] types = {"国有", "民营"};
+        for(String type : types){
+        	String path = "E:\\work\\关联公司\\输出结果_按类型分\\1103国营、民营企业在关联交易行为上的区别\\点度\\" + type + "整体_有向.txt";
+        	List<String> listLines = FileFunction.readFile(path);
+    		boolean isStart = false;//记录是否开始
+    		for(int j = 0; j < listLines.size(); j++){
+    			String line = listLines.get(j);
+    			if(isStart){
+    				if(line.length() == 0) break;//读到公司相关信息的最后一行了
+    				String[] data = line.replaceAll(" +", ",").split(",");
+    				if(listListedCompany.contains(data[INDEX_COMPANYNAME])){//如果是上市公司，则加入计算
+    					//整体的计算
+    					listAllInDegree.add(data[INDEX_INDEGREE] + "," + type);
+    					listAllOutDegree.add(data[INDEX_OUTDEGREE] + "," + type);
+    					double degree = Double.parseDouble(data[INDEX_INDEGREE]) + Double.parseDouble(data[INDEX_OUTDEGREE]);
+    					listAllDegree.add(degree + "," + type);
+    				}
+    			}
+    			if(!isStart && line.contains("- -")){
+    				isStart = true;
+    			}
+    		}
+        }
+    	//输出整体计算结果
+		String pathIn = "E:\\work\\关联公司\\输出结果_按类型分\\1103国营、民营企业在关联交易行为上的区别\\点度\\allInDegree.txt";
+		String pathOut = "E:\\work\\关联公司\\输出结果_按类型分\\1103国营、民营企业在关联交易行为上的区别\\点度\\allOutDegree.txt";
+		String pathAll = "E:\\work\\关联公司\\输出结果_按类型分\\1103国营、民营企业在关联交易行为上的区别\\点度\\allDegree.txt";
+		FileFunction.writeList(listAllInDegree, pathIn);
+		FileFunction.writeList(listAllOutDegree, pathOut);
+		FileFunction.writeList(listAllDegree, pathAll);
+	}
+	
+	
+	
+	
+	
+	
+	
+	//统计每个子网络所包含的大类和小类
+	public static void calculate_industryType() throws FileNotFoundException{
+		int INDEX_COMPANYNAME = 1;
+		//读入2015年度上市公司名单与其分类
+		List<String> listListedCompany = new ArrayList<>();
+		Map<String, String> mapCompanyClass = new HashMap<>();
+		Map<String, String> mapCompanySubclass = new HashMap<>();
+		String fileName = "E:/work/关联公司/原始数据/2015.xls";
+		PoiExcelHelper exHelper;  
+        exHelper = new PoiExcel2k3Helper();  
+        int sheetNumbuer = exHelper.getSheetList(fileName).size();
+        for(int i = 0; i < sheetNumbuer; i++){
+			List<ArrayList<String>> tempLists = exHelper.readExcel(fileName, i);
+			for(List<String> tempList : tempLists){
+				String listedCompany = tempList.get(M.EXCELINDEX_CompanyName);
+				if(!listListedCompany.contains(listedCompany)){
+					String subClass = tempList.get(M.EXCELINDEX_Industry);
+					if(subClass.length() == 0) continue;
+					String topClass = subClass.substring(0, 1);
+					listListedCompany.add(listedCompany);
+					mapCompanyClass.put(listedCompany, topClass);
+					mapCompanySubclass.put(listedCompany, subClass);
+				}
+			}
+        }
+        
+        //读取国有、民营TOP5子网络的公司点度名单，计算其产业分布
+        String[] types = {"国营", "民营"};
+        for(String type : types){
+        	for(int i = 1; i <= 5; i++){
+        		//初始化所需要计算的值
+        		Map<String, Integer> mapClassCount = new HashMap<>();
+        		Map<String, Integer> mapSubclassCount = new HashMap<>();
+        		List<String> listCompany = new ArrayList<>();
+        		//读取数据
+        		String path = "E:\\work\\关联公司\\输出结果_按类型分\\1103国营、民营企业在关联交易行为上的区别\\成分分析\\国有民营TOP5子网络-点度分析\\" + type + "TOP" + i + ".txt";
+        		List<String> listLines = FileFunction.readFile(path);
+        		boolean isStart = false;//记录是否开始
+        		for(int j = 0; j < listLines.size(); j++){
+        			String line = listLines.get(j);
+        			if(isStart){
+        				if(line.length() == 0) break;//读到公司相关信息的最后一行了
+        				String company = line.replaceAll(" +", ",").split(",")[INDEX_COMPANYNAME];
+        				if(listListedCompany.contains(company)){//如果是上市公司，则加入计算
+        					U.mapAddCount(mapClassCount, mapCompanyClass.get(company));
+        					U.mapAddCount(mapSubclassCount, mapCompanySubclass.get(company));
+        					listCompany.add(company);
+        				}
+        			}
+        			if(!isStart && line.contains("- -")){
+        				isStart = true;
+        			}
+        		}
+        		//排序
+        		TreeMap<String, Integer> sortClass = U.sortMap(mapClassCount);
+        		TreeMap<String, Integer> sortSubclass = U.sortMap(mapSubclassCount);
+        		
+        		//输出单个子网络计算结果
+        		U.print("##############");
+        		U.print(type + "TOP" + i + ",共" + listCompany.size() + "家公司");
+        		U.print("大类：" + mapClassCount.size());
+        		U.print(sortClass.toString());
+        		U.print("小类：" + mapSubclassCount.size());
+        		U.print(sortSubclass.toString());
+        	}
+        }
 	}
 	
 }

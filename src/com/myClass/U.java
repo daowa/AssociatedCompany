@@ -5,6 +5,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -181,7 +182,12 @@ public class U {
         sorted_map.putAll(map);
         return sorted_map;
 	}
-	
+	public static TreeMap<String, Double> sortMap2(Map<String, Double> map){
+		ValueComparator2 bvc =  new ValueComparator2(map);
+        TreeMap<String, Double> sorted_map = new TreeMap<String, Double>(bvc);
+        sorted_map.putAll(map);
+        return sorted_map;
+	}
 	
 	//求出保护list值的和
 	public static int getSumList(List<Integer> list){
@@ -396,7 +402,7 @@ public class U {
 		}
 	}
 	
-	//获取excel每一个n个字段的值，以list<String>的方式返回
+	//获取excel每一个n个字段的值，以list<list<String>>的方式返回
 	public static List<List<String>> getRowsList(String fileName, int... fields) throws IOException{
 		List<List<String>> lists = new ArrayList<List<String>>();
 		PoiExcelHelper exHelper;  
@@ -619,6 +625,54 @@ public class U {
 		if(s1.compareTo(s2) < 0)
 			return s1 + "," + s2;
 		return s2 + "," + s1;
+	}
+	
+	
+	
+	
+	
+	
+	//根据新加入的记录，向map中添加计数
+	public static void mapAddCount(Map<String, Integer> map, String s){
+		map.put(s, map.get(s) == null ? 1 : map.get(s)+1);
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	//获取map中topN所占比例的记录
+	public static List<String> getMapTopPercentage(Map<String, Integer> map, int limit){
+		List<String> result = new ArrayList<>();
+		//先计算总数
+		double all = 0;
+		for(Entry<String, Integer> entry : map.entrySet())
+			all += entry.getValue();
+		//取topN(注意，这里不一定能取到N个)
+		TreeMap<String, Integer> sort = U.sortMap(map);
+		for(Entry<String, Integer> entry : sort.entrySet()){
+			if(limit-- == 0) break;
+			result.add(entry.getKey() + ":" + (entry.getValue()/all));
+		}
+		return result;
+	}
+	
+	//计算信息熵
+	public static double getComentropy(Map<String, Integer> map){
+		//先计算总数
+		double all = 0;
+		for(Entry<String, Integer> entry : map.entrySet())
+			all += entry.getValue();
+		//计算信息熵
+		double comentropy = 0;
+		for(Entry<String, Integer> entry : map.entrySet()){
+			double p = (double)entry.getValue()/all;
+			comentropy -= p * (Math.log(p)/Math.log(2));
+		}
+		return comentropy;
 	}
     
 }

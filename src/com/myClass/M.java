@@ -76,4 +76,5 @@ public class M {
 	public static String Type_TransactionCapital = "交易类型_资金往来";
 	//所处行业
 	public static String Type_IndustryRealty = "行业类型_房地产";
+	
 }

@@ -105,9 +105,13 @@ public class FileFunction {
 		String line = "";
 		while((line = reader.readLine()) != null){
 			if(line == "") break;//说明读到最最后一行了
+			line.replace("\t\t", "");//排除开头多个\t的情况
 			String[] cpType = line.split("\t");
-			U.print(cpType[0] + "," + cpType[1]);
-			map.put(cpType[0], Integer.parseInt(cpType[1]));
+			int firstIndex = 0;
+			if(cpType.length < 2) continue;//排除"key	"的情况
+			if(cpType[firstIndex].isEmpty()) continue;//排除"	1"的情况
+			U.print(cpType[firstIndex] + "," + cpType[firstIndex+1]);
+			map.put(cpType[firstIndex], Integer.parseInt(cpType[firstIndex+1]));
 		}
 		return map;
 	}
@@ -189,6 +193,20 @@ public class FileFunction {
 			}
 		}
 		return list;
+	}
+	
+	//输出list
+	public static void writeList(List<String> list, String path) throws IOException{
+		FileWriter fw = new FileWriter(path);
+		int count = 0;
+		for(int i = 0; i < list.size(); i++){
+			count++;
+			fw.write(list.get(i));
+			if(i != list.size()-1)
+				fw.write("\r\n");
+		}
+		fw.close();
+		U.print("已输出到：" + path + " ,共" + count + "条记录");
 	}
 
 	//将Map的键值对都写入txt
